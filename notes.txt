@@ -4,5 +4,6 @@ Dataset: https://www.kaggle.com/c/dogs-vs-cats/data
 Network implementation: https://github.com/Garima13a/MNIST_GAN/blob/master/MNIST_GAN_Solution.ipynb
 
 Steps
-    1. Try current implementation
-    2. If not good (very likely), try CNN
+    1. Clean up current code
+    2. Do preprocessing
+    3. Upload data to SSH
