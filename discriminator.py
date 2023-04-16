@@ -3,31 +3,32 @@ import torch.nn.functional as F
 
 
 class Discriminator(nn.Module):
-    def __init__(self, input_size, hidden_dim, output_size):
+    def __init__(self):
         super(Discriminator, self).__init__()
+        ninput_channels = 3
         
-        # 1
-        self.fc1 = nn.Linear(input_size, hidden_dim*4)
-        self.fc2 = nn.Linear(hidden_dim*4, hidden_dim*2)
-        self.fc3 = nn.Linear(hidden_dim*2, hidden_dim)
-        
-        # 2
-        self.fc4 = nn.Linear(hidden_dim, output_size)
-        
-        # dropout layer 
-        self.dropout = nn.Dropout(0.3)
+        # Need to update this!
+        self.model = [
+            # Block 1
+            nn.Conv2d(ninput_channels, 64),
+            nn.Conv2d(64, 64),
+            nn.Conv2d(64, 128),
+            nn.BatchNorm2d(128),
+            nn.MaxPool2d(2),
+
+            # Block 2
+            nn.Conv2d(128, 128),
+            nn.Conv2d(128, 128),
+            nn.Conv2d(128, 128),
+            nn.BatchNorm2d(128),
+            
+            # dropout layer 
+            nn.Dropout(0.3)
+        ]
     
     
     def forward(self, x):
-        #3 
-        x = x.view(-1, 28*28)
-        #4 
-        x = F.leaky_relu(self.fc1(x), 0.2) # (input, negative_slope=0.2)
-        x = self.dropout(x)
-        x = F.leaky_relu(self.fc2(x), 0.2)
-        x = self.dropout(x)
-        x = F.leaky_relu(self.fc3(x), 0.2)
-        x = self.dropout(x)
-        # 5
-        out = self.fc4(x)
-        return out
+        for layer in self.layers:
+            x = layer(x)
+
+        return x

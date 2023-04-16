@@ -8,38 +8,24 @@ import pickle as pkl
 from generator import Generator
 from discriminator import Discriminator
 from utils import real_loss, fake_loss
+from load_data import load_data
 
+def main():
+    # instantiate discriminator and generator
+    D = Discriminator()
+    G = Generator()
+    # check that they are as you expect
+    print(D)
+    print(G)
 
-# Discriminator hyperparameters
-# 1
-input_size = 784
-# 2
-d_output_size = 1
-# 3
-d_hidden_size = 32
-# Generator hyperparams
-# 4
-z_size = 100
-# 5
-g_output_size = 784
-# 6
-g_hidden_size = 32
+    lr = 0.002
+    d_optimizer = optim.Adam(D.parameters(), lr)
+    g_optimizer = optim.Adam(G.parameters(), lr)
 
+    data = load_data()
+    train(D, G, d_optimizer, g_optimizer, data)
 
-# instantiate discriminator and generator
-D = Discriminator(input_size, d_hidden_size, d_output_size)
-G = Generator(z_size, g_hidden_size, g_output_size)
-# check that they are as you expect
-print(D)
-print(G)
-
-lr = 0.002
-d_optimizer = optim.Adam(D.parameters(), lr)
-g_optimizer = optim.Adam(G.parameters(), lr)
-
-# unfinished.... 
-
-def train():
+def train(D, G, d_optimizer, g_optimizer, data):
     # training hyperparams
     num_epochs = 100
 
