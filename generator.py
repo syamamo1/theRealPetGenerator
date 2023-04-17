@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+# Takes in a 1D latent vector (noise)
+# Outputs a real-lookin' photo of a cat/dog
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()

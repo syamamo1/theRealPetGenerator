@@ -2,6 +2,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+# Binary classifier (real or fake)
+# Takes in an image
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
