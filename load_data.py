@@ -79,7 +79,7 @@ def create_generator_seeds(batch_size):
     Creates a new set of random seed vectors for the generator
 
     :params:
-    None
+    batch_size: the number of seeds to generate for each training iteration
 
     :returns:
     generator_seeds: an np.ndarray of shape [batch_size, 1, 100] with random entries on [0,1]
