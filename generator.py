@@ -1,6 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
-
 
 # Takes in a 1D latent vector (noise)
 # Outputs a real-lookin' photo of a cat/dog
@@ -9,6 +7,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         
         # How do I determine the output size of this model?
+        # maybe do a flatten layer?
         self.model = nn.Sequential(
             nn.ConvTranspose2d(latent_size, 32, 3),
             nn.ReLU(True),

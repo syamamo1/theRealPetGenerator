@@ -1,6 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
-
 
 # Binary classifier (real or fake)
 # Takes in an image
@@ -9,8 +7,6 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         # Simple model for now
-        # Input: (n, input_channels, height, width) images
-        # Output: 1D binary (n) - probability that sample is REAL
         self.model = nn.Sequential(
             nn.Conv2d(nchannels, 64, 3),
             nn.ReLU(True),
