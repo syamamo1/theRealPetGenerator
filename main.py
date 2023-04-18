@@ -12,21 +12,23 @@ from load_data import load_data
 
 def main():
     # instantiate discriminator and generator
-    D = Discriminator()
-    G = Generator()
-    # check that they are as you expect
-    print(D)
-    print(G)
+    nchannels = 1
+    height = 64
+    width = 64 
+    latent_size = 100
 
-    lr = 0.002
-    d_optimizer = optim.Adam(D.parameters(), lr)
-    g_optimizer = optim.Adam(G.parameters(), lr)
+    G = Generator(latent_size, nchannels)
+    D = Discriminator(nchannels, height, width)
+
+    d_optimizer = optim.Adam(D.parameters())
+    g_optimizer = optim.Adam(G.parameters())
 
     data = load_data()
     train(D, G, d_optimizer, g_optimizer, data)
 
+
+# Need to finish this still!
 def train(D, G, d_optimizer, g_optimizer, data):
-    # training hyperparams
     num_epochs = 100
 
     # keep track of loss and generated, "fake" samples

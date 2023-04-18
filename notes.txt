@@ -10,3 +10,14 @@ Steps
     1. Clean up current code
     2. Do preprocessing
     3. Upload data to SSH
+
+
+Progress:
+    - obtained dataset
+    - finished run.sh
+    - finished discriminator.py
+    - finished utils.py
+
+TODO:
+    - generator.py
+    - main.py 

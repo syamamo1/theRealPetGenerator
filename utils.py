@@ -1,26 +1,29 @@
 import torch
 import torch.nn as nn
 
-# Calculate losses
-def real_loss(D_out, smooth=False):
-    batch_size = D_out.size(0)
-    # label smoothing
-    if smooth:
-    # smooth, real labels = 0.9
-        labels = torch.ones(batch_size)*0.9
-    else:
-        labels = torch.ones(batch_size) # real labels = 1
+# Both loss functions take the output of the discriminator
 
-    # numerically stable loss
-    criterion = nn.BCEWithLogitsLoss()
-    # calculate loss
-    loss = criterion(D_out.squeeze(), labels)
+# Loss on real dataset
+# smoothing if we want to "generalize more"
+# real labels = 1
+def real_loss(preds, smooth=False):
+    nsamples = preds.size(0)
+
+    # smooth, real labels = 0.9
+    if smooth:
+        labels = torch.ones(nsamples)*0.9
+    else:
+        labels = torch.ones(nsamples) 
+
+    criterion = nn.BCELoss()
+    loss = criterion(preds.squeeze(), labels)
     return loss
 
-def fake_loss(D_out):
-    batch_size = D_out.size(0)
-    labels = torch.zeros(batch_size) # fake labels = 0
-    criterion = nn.BCEWithLogitsLoss()
-    # calculate loss
-    loss = criterion(D_out.squeeze(), labels)
+# Loss on generated dataset
+# fake labels = 0
+def fake_loss(preds):
+    nsamples = preds.size(0)
+    labels = torch.zeros(nsamples) 
+    criterion = nn.BCELoss()
+    loss = criterion(preds.squeeze(), labels)
     return loss
