@@ -13,9 +13,7 @@ class Generator(nn.Module):
             nn.ReLU(True),
             nn.ConvTranspose2d(32, 64, 3),
             nn.ReLU(True),
-            nn.ConvTranspose2d(64, 128, 3),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(128, nchannels, 3)
+            nn.ConvTranspose2d(64, nchannels, 3)
         )
 
     def forward(self, x):

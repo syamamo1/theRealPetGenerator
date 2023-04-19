@@ -19,5 +19,14 @@ Progress:
     - finished utils.py
 
 TODO:
-    - generator.py
-    - main.py 
+    - generator.py (figure out how to get desired output shape)
+    - main.py (change variable names!)
+    - function that shows generated images (steal?)
+
+Things that can be improved:
+    - standardization of input data
+    - improve D model
+    - improve G model
+    - smooth loss
+    - larger input (64, 64)
+    - shuffle input to discriminator instead of ALL real then ALL fake

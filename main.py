@@ -7,11 +7,11 @@ import pickle as pkl
 
 from generator import Generator
 from discriminator import Discriminator
-from utils import real_loss, fake_loss
+from utils import real_loss, fake_loss, plot_losses
 from load_data import load_data
 
+# Runner code!
 def main():
-    # instantiate discriminator and generator
     nchannels = 1
     height = 64
     width = 64 
@@ -23,107 +23,96 @@ def main():
     d_optimizer = optim.Adam(D.parameters())
     g_optimizer = optim.Adam(G.parameters())
 
+    # Binary cross entropy: evaluates probabilities
+    criterion = nn.BCELoss() 
+
     data = load_data()
-    train(D, G, d_optimizer, g_optimizer, data)
+    losses = train(D, G, d_optimizer, g_optimizer, data, criterion, latent_size)
+    plot_losses(losses)
 
 
 # Need to finish this still!
-def train(D, G, d_optimizer, g_optimizer, data):
+def train(D, G, d_optimizer, g_optimizer, data, criterion, latent_size):
     num_epochs = 100
 
-    # keep track of loss and generated, "fake" samples
     samples = []
-    losses = []
+    losses = np.zeros((num_epochs, 2))
 
-    print_every = 400
+    # Constant z to track generator change
+    sample_size = 4
+    constant_z = np.random.uniform(-1, 1, size=(sample_size, latent_size))
+    constant_z = torch.from_numpy(constant_z).float()
 
-    # Get some fixed data for sampling. These are images that are held
-    # constant throughout training, and allow us to inspect the model's performance
-    sample_size=16
-    fixed_z = np.random.uniform(-1, 1, size=(sample_size, z_size))
-    fixed_z = torch.from_numpy(fixed_z).float()
-
-    # train the network
+    # Train time
     D.train()
     G.train()
     for epoch in range(num_epochs):
         
-        for batch_i, (real_images, _) in enumerate(train_loader):
-                    
+        # This will certainly be different - data loader?
+        for batch_num, (real_images, _) in enumerate(data):
             batch_size = real_images.size(0)
             
-            ## Important rescaling step ## 
-            real_images = real_images*2 - 1  # rescale input images from [0,1) to [-1, 1)
-            
             # ============================================
-            #            TRAIN THE DISCRIMINATOR
+            #            TRAIN DISCRIMINATOR
             # ============================================
-            
             d_optimizer.zero_grad()
             
-            # 1. Train with real images
-
-            # Compute the discriminator losses on real images 
-            # smooth the real labels
-            D_real = D(real_images)
-            d_real_loss = real_loss(D_real, smooth=True)
+            # Get predictions of real images
+            preds_real = D(real_images)
             
-            # 2. Train with fake images
-            
-            # Generate fake images
-            z = np.random.uniform(-1, 1, size=(batch_size, z_size))
+            # Get predictions of fake images
+            z = np.random.uniform(-1, 1, size=(batch_size, latent_size))
             z = torch.from_numpy(z).float()
             fake_images = G(z)
+            preds_fake = D(fake_images)
             
-            # Compute the discriminator losses on fake images        
-            D_fake = D(fake_images)
-            d_fake_loss = fake_loss(D_fake)
-            
-            # add up loss and perform backprop
-            d_loss = d_real_loss + d_fake_loss
+            # Compute loss
+            d_loss_real = real_loss(preds_real, criterion, smooth=False)
+            d_loss_fake = fake_loss(preds_fake, criterion)
+            d_loss = d_loss_real + d_loss_fake
+
+            # Update discriminator model
             d_loss.backward()
             d_optimizer.step()
             
-            
             # =========================================
-            #            TRAIN THE GENERATOR
+            #            TRAIN GENERATOR
             # =========================================
             g_optimizer.zero_grad()
             
-            # 1. Train with fake images and flipped labels
-            
             # Generate fake images
-            z = np.random.uniform(-1, 1, size=(batch_size, z_size))
+            z = np.random.uniform(-1, 1, size=(batch_size, latent_size))
             z = torch.from_numpy(z).float()
             fake_images = G(z)
             
-            # Compute the discriminator losses on fake images 
-            # using flipped labels!
-            D_fake = D(fake_images)
-            g_loss = real_loss(D_fake) # use real loss to flip labels
+            # Compute loss
+            preds_fake = D(fake_images)
+            g_loss = real_loss(preds_fake, criterion) # use real loss to flip labels
             
-            # perform backprop
+            # Update generator model
             g_loss.backward()
             g_optimizer.step()
 
+
             # Print some loss stats
-            if batch_i % print_every == 0:
-                # print discriminator and generator loss
+            if batch_num % 400 == 0:
                 print('Epoch [{:5d}/{:5d}] | d_loss: {:6.4f} | g_loss: {:6.4f}'.format(
                         epoch+1, num_epochs, d_loss.item(), g_loss.item()))
 
         
-        ## AFTER EACH EPOCH##
-        # append discriminator loss and generator loss
-        losses.append((d_loss.item(), g_loss.item()))
-        
-        # generate and save sample, fake images
-        G.eval() # eval mode for generating samples
-        samples_z = G(fixed_z)
-        samples.append(samples_z)
-        G.train() # back to train mode
+        # Save epoch loss
+        losses[epoch, 0] += g_loss.item()
+        losses[epoch, 1] += d_loss.item()
+         
+        # Generate and save images
+        G.eval() 
+        generated_images = G(constant_z)
+        samples.append(generated_images)
+        G.train()
 
 
-    # Save training generator samples
+    # Save generated samples to .pkl
     with open('train_samples.pkl', 'wb') as f:
         pkl.dump(samples, f)
+
+    return losses
