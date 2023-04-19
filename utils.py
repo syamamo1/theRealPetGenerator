@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle as pkl
+
 
 # Both loss functions take the output of the discriminator
 
@@ -14,7 +16,7 @@ def real_loss(preds, criterion, smooth=False):
     if smooth:
         labels = torch.ones(nsamples)*0.9
     else:
-        labels = torch.ones(nsamples) 
+        labels = torch.ones(nsamples)
 
     loss = criterion(preds.squeeze(), labels)
     return loss
@@ -43,3 +45,23 @@ def plot_losses(losses):
     plt.xlabel('Epoch')
     plt.ylabel('Loss (Binary Cross Entropy)')
     plt.show()
+
+
+# Finish this up!
+# helper function for viewing a list of passed in sample images
+def view_samples(epoch, samples):
+    # Load samples from generator, taken while training
+    with open('train_samples.pkl', 'rb') as f:
+        samples = pkl.load(f)
+
+    rows = 10 # split epochs into 10, so 100/10 = every 10 epochs
+    cols = 6
+    fig, axes = plt.subplots(figsize=(7,12), nrows=rows, ncols=cols, sharex=True, sharey=True)
+
+    for sample, ax_row in zip(samples[::int(len(samples)/rows)], axes):
+        for img, ax in zip(sample[::int(len(sample)/cols)], ax_row):
+            img = img.detach()
+            ax.imshow(img.reshape((28,28)), cmap='Greys_r')
+            ax.xaxis.set_visible(False)
+            ax.yaxis.set_visible(False)
+

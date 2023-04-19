@@ -20,8 +20,7 @@ Progress:
 
 TODO:
     - generator.py (figure out how to get desired output shape)
-    - main.py (change variable names!)
-    - function that shows generated images (steal?)
+    - function that shows generated images (fix this up!)
 
 Things that can be improved:
     - standardization of input data
@@ -30,3 +29,4 @@ Things that can be improved:
     - smooth loss
     - larger input (64, 64)
     - shuffle input to discriminator instead of ALL real then ALL fake
+    - data augmentation
