@@ -16,17 +16,17 @@ Progress:
     - obtained dataset
     - finished run.sh
     - finished discriminator.py
+    - finished generator.py
     - finished utils.py
 
 TODO:
-    - generator.py (figure out how to get desired output shape)
     - function that shows generated images (fix this up!)
+    - get dataLoader working
 
 Things that can be improved:
     - standardization of input data
     - improve D model
     - improve G model
     - smooth loss
-    - larger input (64, 64)
-    - shuffle input to discriminator instead of ALL real then ALL fake
+    - larger images than (64, 64)
     - data augmentation

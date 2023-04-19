@@ -1,10 +1,14 @@
 import torch.nn as nn
+from torch import ones
 
 # Takes in a 1D latent vector (noise)
 # Outputs a real-lookin' photo of a cat/dog
 class Generator(nn.Module):
     def __init__(self, latent_size, nchannels):
         super(Generator, self).__init__()
+
+        # Binary cross entropy: evaluates probabilities
+        self.criterion = nn.BCELoss() 
         
         # output_height = (input_height - 1) * stride - 2 * padding + kernel_size
         # output_width = (input_width - 1) * stride - 2 * padding + kernel_size
@@ -16,5 +20,23 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(128, nchannels, 4, 4, 0)
         )
 
+
+    # Trying to fool discriminator with generated images
+    # so labels are 1
+    # smoothing if we want to "generalize more"
+    def loss(self, preds, smooth=False):
+        nsamples = preds.size(0)
+
+        # smooth, real labels = 0.9
+        if smooth:
+            labels = ones(nsamples)*0.9
+        else:
+            labels = ones(nsamples)
+
+        loss = self.criterion(preds.squeeze(), labels)
+        return loss
+
+
+    # Forward pass
     def forward(self, x):
         return self.model(x)

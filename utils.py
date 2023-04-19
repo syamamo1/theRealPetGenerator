@@ -4,30 +4,11 @@ import matplotlib.pyplot as plt
 import pickle as pkl
 
 
-# Both loss functions take the output of the discriminator
-
-# Loss on real dataset
-# smoothing if we want to "generalize more"
-# real labels = 1
-def real_loss(preds, criterion, smooth=False):
-    nsamples = preds.size(0)
-
-    # smooth, real labels = 0.9
-    if smooth:
-        labels = torch.ones(nsamples)*0.9
-    else:
-        labels = torch.ones(nsamples)
-
-    loss = criterion(preds.squeeze(), labels)
-    return loss
-
-# Loss on generated dataset
-# fake labels = 0
-def fake_loss(preds, criterion):
-    nsamples = preds.size(0)
-    labels = torch.zeros(nsamples) 
-    loss = criterion(preds.squeeze(), labels)
-    return loss
+# Generate nsampels latent vectors in 2D tensor
+def generate_z(nsamples, latent_size):
+    z = np.random.uniform(-1, 1, size=(nsamples, latent_size))
+    z = torch.from_numpy(z).float()
+    return z
 
 
 # Plot Gen/Disc losses through epochs
@@ -45,6 +26,19 @@ def plot_losses(losses):
     plt.xlabel('Epoch')
     plt.ylabel('Loss (Binary Cross Entropy)')
     plt.show()
+
+
+# Save samples and losses to files
+def save_train_data(losses, samples):
+    samples_fname = 'train_samples.pkl'
+    with open(samples_fname, 'wb') as f:
+        pkl.dump(samples, f)
+        print(f'Saved samples to file {samples_fname}')
+
+    losses_fname = 'train_losses.npy'
+    with open(losses_fname, 'wb') as f:
+        np.save(f, losses)
+        print(f'Saved losses to file {losses_fname}')
 
 
 # Finish this up!
