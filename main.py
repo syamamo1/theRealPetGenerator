@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch.optim as optim
-import torch
 import numpy as np
+from tqdm import tqdm
 
 from generator import Generator
 from discriminator import Discriminator
-from utils import plot_losses, save_train_data, generate_z
+from utils import plot_losses, view_samples, save_train_data, generate_z
 from load_data import load_data
 
 # Runner code!
@@ -23,12 +23,19 @@ def main():
 
     data = load_data()
     losses, samples = train(D, G, d_optimizer, g_optimizer, data, latent_size)
-    save_train_data(losses, samples)
-    plot_losses(losses)
+
+    # Save, visualize losses and samples
+    losses_fname = 'train_losses.npy'
+    samples_fname = 'train_samples.pkl'
+    save_train_data(losses, samples, losses_fname, samples_fname)
+    plot_losses(losses_fname)
+    view_samples(samples_fname)
+
 
 
 # Need to finish this still!
 def train(D, G, d_optimizer, g_optimizer, data, latent_size):
+    print('Starting train!')
     num_epochs = 100
 
     samples = []
@@ -40,7 +47,7 @@ def train(D, G, d_optimizer, g_optimizer, data, latent_size):
     # Train time
     D.train()
     G.train()
-    for epoch in range(num_epochs):
+    for epoch in tqdm(range(num_epochs), desc='Training Models'):
         
         # This will certainly be different - data loader?
         for batch_num, (real_images, _) in enumerate(data):
@@ -89,7 +96,6 @@ def train(D, G, d_optimizer, g_optimizer, data, latent_size):
                 print('Epoch [{:5d}/{:5d}] | d_loss: {:6.4f} | g_loss: {:6.4f}'.format(
                         epoch+1, num_epochs, d_loss.item(), g_loss.item()))
 
-        
         # Save epoch loss
         losses[epoch, 0] += g_loss.item()
         losses[epoch, 1] += d_loss.item()
@@ -100,4 +106,9 @@ def train(D, G, d_optimizer, g_optimizer, data, latent_size):
         samples.append(generated_images)
         G.train()
 
+    print('Finished train')
     return losses, samples
+
+
+if __name__ == '__main__':
+    main()
