@@ -56,8 +56,12 @@ def load_data(dataset_type, class_label):
                                  transforms.CenterCrop(64),
                                  transforms.ToTensor()])
     training_dataset = datasets.ImageFolder(data_set, transform=transform)
-    data_loader = torch.utils.data.DataLoader(training_dataset, batch_size=1, shuffle=True)
+    data_loader = torch.utils.data.DataLoader(training_dataset, batch_size=16, shuffle=True)
 
+    
+    # edit so that the batch_size parameter can be changed and multiple pictures can be loaded at once
+
+    
     data = []
     # Populate data array with images and their labels
     for img, label in data_loader:
@@ -114,7 +118,7 @@ def standardize(imgs):
     return
 
 
-def create_generator_seeds(batch_size, as_image):
+def create_generator_seeds(batch_size):
     '''
     Creates a new set of random seed vectors for the generator
 
@@ -124,10 +128,7 @@ def create_generator_seeds(batch_size, as_image):
     :returns:
     generator_seeds: an np.ndarray of shape [batch_size, 1, 100] with random entries on [0,1]
     '''
-    if as_image==True:
-        generator_seeds = np.random.rand(batch_size, 3, 64, 64)
-    
-    else:
-        generator_seeds = np.random.rand(batch_size, 1, 100)
+
+    generator_seeds = np.random.rand(batch_size, 1, 100)
 
     return generator_seeds
