@@ -17,7 +17,7 @@ img_size = 64 # height and width of images
 latent_size = 100
 
 batch_size = 64 # Number of real images fed to the descriminator per training cycle
-num_epochs = 100
+num_epochs = 5
 
 cur_dir = os.getcwd()
 data_path = os.path.join(cur_dir, 'dogs-vs-cats')
@@ -35,7 +35,7 @@ def main():
 
     losses, samples = train(D, G, d_optimizer, g_optimizer, latent_size, device)
 
-    # Save results
+    # # Save results
     losses_fname = 'train_losses.npy'
     samples_fname = 'train_samples.pkl'
     save_train_data(losses, samples, losses_fname, samples_fname)
@@ -64,6 +64,7 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
         
         real_data_loader = load_data(data_path=data_path, batch_size=batch_size, img_size=img_size)
         num_batches = 37500//batch_size
+        sum_dloss, sum_gloss = 0, 0
         for batch_num, (real_images, _) in tqdm(enumerate(real_data_loader), desc=f'Epoch {epoch}', total=num_batches):
             real_images = real_images.to(device)
             
@@ -110,9 +111,12 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
                         epoch+1, num_epochs, batch_num+1, num_batches, d_loss.item(), g_loss.item())
                 tqdm.write(message)
 
+            sum_dloss += d_loss.item()
+            sum_gloss += g_loss.item()
+
         # Save epoch loss
-        losses[epoch, 0] += g_loss.item()
-        losses[epoch, 1] += d_loss.item()
+        losses[epoch, 0] += sum_gloss/num_batches
+        losses[epoch, 1] += sum_dloss/num_batches
          
         # Generate and save images
         G.eval() 

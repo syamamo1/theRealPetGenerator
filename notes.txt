@@ -6,7 +6,8 @@ TODO:
     - run on compute cluster
 
 Things that can be improved:
-    - standardization of input data
+    - weight generator loss more
+    - update discriminator weights less freq
     - improve D model
     - improve G model
     - smooth loss
