@@ -8,12 +8,19 @@ from discriminator import Discriminator
 from utils import plot_losses, view_samples, save_train_data, generate_z
 from load_data import load_data
 
+
+# Global Variables
+nchannels = 3
+height = 64
+width = 64 
+latent_size = 100
+
+batch_size = 64   # Number of real images fed to the descriminator per training cycle
+num_epochs = 100
+
+
 # Runner code!
 def main():
-    nchannels = 1
-    height = 64
-    width = 64 
-    latent_size = 100
 
     G = Generator(latent_size, nchannels)
     D = Discriminator(nchannels, height, width)
@@ -21,8 +28,7 @@ def main():
     d_optimizer = optim.Adam(D.parameters())
     g_optimizer = optim.Adam(G.parameters())
 
-    data = load_data()
-    losses, samples = train(D, G, d_optimizer, g_optimizer, data, latent_size)
+    losses, samples = train(D, G, d_optimizer, g_optimizer, latent_size)
 
     # Save, visualize losses and samples
     losses_fname = 'train_losses.npy'
@@ -32,11 +38,8 @@ def main():
     view_samples(samples_fname)
 
 
-
-# Need to finish this still!
-def train(D, G, d_optimizer, g_optimizer, data, latent_size):
+def train(D, G, d_optimizer, g_optimizer, latent_size):
     print('Starting train!')
-    num_epochs = 100
 
     samples = []
     losses = np.zeros((num_epochs, 2))
@@ -47,11 +50,14 @@ def train(D, G, d_optimizer, g_optimizer, data, latent_size):
     # Train time
     D.train()
     G.train()
+    
     for epoch in tqdm(range(num_epochs), desc='Training Models'):
         
-        # This will certainly be different - data loader?
-        for batch_num, (real_images, _) in enumerate(data):
-            batch_size = real_images.size(0)
+        # load data in batches of size batch_size. Weights are updated after predictions are made for every batch
+        
+        real_data_loader = load_data(dataset_type='train', batch_size=64)
+        batch_num = 0
+        for real_images, _ in real_data_loader:
             
             # ============================================
             #            TRAIN DISCRIMINATOR
@@ -90,6 +96,8 @@ def train(D, G, d_optimizer, g_optimizer, data, latent_size):
             g_loss.backward()
             g_optimizer.step()
 
+
+            batch_num += 1 # Increment batch number
 
             # Print some loss stats
             if batch_num % 400 == 0:
