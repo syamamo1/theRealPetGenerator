@@ -5,22 +5,25 @@ from torch import ones, zeros
 # Outputs the PROBABILITY that an image is REAL
 # Takes in an image
 class Discriminator(nn.Module):
-    def __init__(self, nchannels, height, width):
+    def __init__(self, nchannels, device):
         super(Discriminator, self).__init__()
 
         # Binary cross entropy: evaluates probabilities
         self.criterion = nn.BCELoss() 
 
+        # GPU device!
+        self.device = device
+
         # Simple model for now
         self.model = nn.Sequential(
-            nn.Conv2d(nchannels, 64, 3),
+            nn.Conv2d(nchannels, 64, 3, bias=False),
             nn.ReLU(True),
-            nn.Conv2d(64, 64, 3),
+            nn.Conv2d(64, 64, 3, bias=False),
             nn.ReLU(True),
             nn.Flatten(1, -1),
-            nn.Linear(64*height*width, 128),
+            nn.Linear(230400, 128, bias=False),
             nn.ReLU(True),
-            nn.Linear(128, 1),
+            nn.Linear(128, 1, bias=False),
             nn.Sigmoid()
         )
 
@@ -45,9 +48,9 @@ class Discriminator(nn.Module):
 
         # smooth, real labels = 0.9
         if smooth:
-            labels = ones(nsamples)*0.9
+            labels = ones(nsamples, device = self.device)*0.9
         else:
-            labels = ones(nsamples)
+            labels = ones(nsamples, device = self.device)
 
         loss = self.criterion(preds.squeeze(), labels)
         return loss
@@ -56,7 +59,7 @@ class Discriminator(nn.Module):
     # These are fake images so their labels are 0
     def fake_loss(self, preds):
         nsamples = preds.size(0)
-        labels = zeros(nsamples) 
+        labels = zeros(nsamples, device = self.device) 
         loss = self.criterion(preds.squeeze(), labels)
         return loss
     

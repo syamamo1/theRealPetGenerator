@@ -1,27 +1,9 @@
-Useful links:
-
-Dataset: https://www.kaggle.com/c/dogs-vs-cats/data
-MNIST Pytorch example: https://github.com/Garima13a/MNIST_GAN/blob/master/MNIST_GAN_Solution.ipynb
-MNIST TF example: https://www.tensorflow.org/tutorials/generative/dcgan
-Celeb Pytorch example: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
-
-
-Steps
-    1. Clean up current code
-    2. Do preprocessing
-    3. Upload data to SSH
-
-
 Progress:
-    - obtained dataset
-    - finished run.sh
-    - finished discriminator.py
-    - finished generator.py
-    - finished utils.py
+    - finished preliminary model
 
 TODO:
-    - function that shows generated images (fix this up!)
-    - get dataLoader working
+    - write save_model()/load_model()
+    - run on compute cluster
 
 Things that can be improved:
     - standardization of input data
@@ -30,3 +12,9 @@ Things that can be improved:
     - smooth loss
     - larger images than (64, 64)
     - data augmentation
+
+Useful links:
+    - Dataset: https://www.kaggle.com/c/dogs-vs-cats/data
+    - MNIST Pytorch example: https://github.com/Garima13a/MNIST_GAN/blob/master/MNIST_GAN_Solution.ipynb
+    - MNIST TF example: https://www.tensorflow.org/tutorials/generative/dcgan
+    - Celeb Pytorch example: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html

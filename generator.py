@@ -4,11 +4,14 @@ from torch import ones
 # Takes in a 1D latent vector (noise)
 # Outputs a real-lookin' photo of a cat/dog
 class Generator(nn.Module):
-    def __init__(self, latent_size, nchannels):
+    def __init__(self, latent_size, nchannels, device):
         super(Generator, self).__init__()
 
         # Binary cross entropy: evaluates probabilities
         self.criterion = nn.BCELoss() 
+
+        # GPU device!
+        self.device = device
         
         # output_height = (input_height - 1) * stride - 2 * padding + kernel_size
         # output_width = (input_width - 1) * stride - 2 * padding + kernel_size
@@ -29,9 +32,9 @@ class Generator(nn.Module):
 
         # smooth, real labels = 0.9
         if smooth:
-            labels = ones(nsamples)*0.9
+            labels = ones(nsamples, device = self.device)*0.9
         else:
-            labels = ones(nsamples)
+            labels = ones(nsamples, device = self.device)
 
         loss = self.criterion(preds.squeeze(), labels)
         return loss

@@ -2,13 +2,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle as pkl
-
+from load_data import load_data
 
 # Generates latent vectors of size
 # 2D: (nsamples, latent_size)
-def generate_z(nsamples, latent_size):
-    z = np.random.uniform(-1, 1, size=(nsamples, latent_size))
-    z = torch.from_numpy(z).float()
+def generate_z(nsamples, latent_size, device):
+    z = torch.randn(nsamples, latent_size, 1, 1, device=device)
     return z
 
 
@@ -38,24 +37,38 @@ def plot_losses(fname):
     plt.title('Model Losses vs. Epoch')
     plt.xlabel('Epoch')
     plt.ylabel('Loss (Binary Cross Entropy)')
+    plt.legend()
     plt.show()
 
 
-# Finish this up!
-# helper function for viewing a list of passed in sample images
-def view_samples():
+# View generator results though epochs
+def view_samples(samples_fname):
 
-    with open('train_samples.pkl', 'rb') as f:
+    with open(samples_fname, 'rb') as f:
         samples = pkl.load(f)
 
-    every_n_epochs = 10 # split epochs into 10, so 100/10 = every 10 epochs
+    # Use this for epochs = 100
+    every_n_epochs = 10 
     cols = 4
     _, axes = plt.subplots(figsize=(7,12), nrows=every_n_epochs, ncols=cols, sharex=True, sharey=True)
 
     for sample, ax_row in zip(samples[::int(len(samples)/every_n_epochs)], axes):
         for img, ax in zip(sample[::int(len(sample)/cols)], ax_row):
-            img = img.detach()
-            ax.imshow(img.reshape((28,28)), cmap='Greys_r')
+            img = img.detach().cpu()
+            ax.imshow(img.permute(1,2,0))
             ax.xaxis.set_visible(False)
             ax.yaxis.set_visible(False)
 
+    # Use this for viewing first 5 epochs
+    # rows = 5
+    # cols = 4
+    # _, axes = plt.subplots(figsize=(7,12), nrows=rows, ncols=cols, sharex=True, sharey=True)
+
+    # for sample, ax_row in zip(samples, axes):
+    #     for img, ax in zip(sample, ax_row):
+    #         img = img.detach().cpu()
+    #         ax.imshow(img.permute(1,2,0))
+    #         ax.xaxis.set_visible(False)
+    #         ax.yaxis.set_visible(False)
+
+    plt.show()

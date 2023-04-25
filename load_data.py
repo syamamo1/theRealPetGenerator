@@ -1,33 +1,44 @@
-import numpy as np
-from skimage import io, img_as_float32, transform
-from matplotlib import pyplot as plt
 import torch
-from torch import transforms, datasets
+from torchvision import transforms, datasets
 
-# Load and preprocess data here
 
-def load_data(dataset_type, batch_size, img_size):
+def load_data(data_path, batch_size, img_size):
     '''
     Loads real images from the specified folder (either test or train) and resizes/formats the images
     to be passed to a CNN.
 
     :params:
-    dataset_type: a string of 'train' or 'test' to instruct which folder to load data from
+    dataset_type: a path to dataset to be used
     batch_size: the number of images that are batched together for each training cycle within each epoch.
                 The number of batches (loss calculations and weight adjustments) per epoch is 
                 num_real_images/batch_size
+    img_size: height and width of output images
 
     :returns:
     data_loader: iterable object containing pytorch tensors of batches of real images and their labels 
     '''
-    data_set = f'./dogs-vs-cats/{dataset_type}'
     transform = transforms.Compose([transforms.Resize(img_size),
                                  transforms.CenterCrop(img_size),
                                  transforms.ToTensor()])
-    training_dataset = datasets.ImageFolder(data_set, transform=transform)
+    training_dataset = datasets.ImageFolder(data_path, transform=transform)
     data_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
+    data_loader = data_loader
 
     return data_loader
+
+
+
+
+'''
+
+
+Below methods are currently unused...
+
+
+'''
+
+import numpy as np
+from skimage import io, img_as_float32, transform
 
 
 def format_images(img_paths):
