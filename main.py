@@ -24,8 +24,8 @@ num_epochs = 100
 
 print('Num epochs {}, batch size {}'.format(num_epochs, batch_size))
 
-cur_dir = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
-data_path = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', 'dogs-vs-cats')
+cur_dir = os.getcwd()
+data_path = os.path.join(cur_dir, 'dogs-vs-cats')
 
 # Filenames for saved stuff
 losses_fname = 'train_losses.npy'
@@ -40,7 +40,7 @@ def main():
     eval_mode = 0
 
     if train_mode:
-        device = setup_gpu('nvidia')
+        device = setup_gpu('mac')
 
         G = Generator(latent_size, nchannels, device).to(device)
         D = Discriminator(nchannels, device).to(device)
