@@ -14,16 +14,31 @@ class Discriminator(nn.Module):
         # GPU device!
         self.device = device
 
-        # Simple model for now
+        # Killer model now
         self.model = nn.Sequential(
             nn.Conv2d(nchannels, 64, 3, bias=False),
             nn.ReLU(True),
-            nn.Conv2d(64, 64, 3, bias=False),
+
+            nn.Conv2d(64, 32, 3, bias=False),
+            nn.BatchNorm2d(32),
             nn.ReLU(True),
+
+            nn.Conv2d(32, 16, 3, bias=False),
+            nn.BatchNorm2d(16),
+            nn.ReLU(True),
+
+            nn.Conv2d(16, 8, 3, bias=False),
+            nn.BatchNorm2d(8),
+            nn.ReLU(True),
+
             nn.Flatten(1, -1),
-            nn.Linear(230400, 128, bias=False),
+            nn.Linear(25088, 128, bias=False),
             nn.ReLU(True),
-            nn.Linear(128, 1, bias=False),
+
+            nn.Linear(128, 32, bias=False),
+            nn.ReLU(True),
+
+            nn.Linear(32, 1, bias=False),
             nn.Sigmoid()
         )
 

@@ -13,14 +13,28 @@ class Generator(nn.Module):
         # GPU device!
         self.device = device
         
+        # Input is size (nsamples, latent_size, 1, 1)
         # output_height = (input_height - 1) * stride - 2 * padding + kernel_size
         # output_width = (input_width - 1) * stride - 2 * padding + kernel_size
         self.model = nn.Sequential(
-            nn.ConvTranspose2d(latent_size, 32, kernel_size=4, stride=4, padding=0),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(32, 128, 4, 4, 0),
-            nn.ReLU(True),
-            nn.ConvTranspose2d(128, nchannels, 4, 4, 0)
+            nn.ConvTranspose2d(latent_size, 512, kernel_size=4, stride=1, padding=0),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(512, 256, 4, 2, 1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(256, 128, 4, 2, 1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(128, 32, 4, 2, 1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+
+            nn.ConvTranspose2d(32, nchannels, 4, 2, 1),
+            nn.ReLU(inplace=True)
         )
 
         # Setup for multiple GPUs

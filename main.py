@@ -45,6 +45,8 @@ def main():
         G = Generator(latent_size, nchannels, device).to(device)
         D = Discriminator(nchannels, device).to(device)
 
+        print('Num trainable Discriminator:', sum(p.numel() for p in D.parameters()))
+        print('Num trainable Generator:', sum(p.numel() for p in G.parameters()))
         print('Using {} GPUs'.format(torch.cuda.device_count()))
 
         d_optimizer = optim.Adam(D.parameters())

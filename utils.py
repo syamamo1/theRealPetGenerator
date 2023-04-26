@@ -10,11 +10,11 @@ from tqdm import tqdm
 # Print messages about training
 def print_message(epoch, num_epochs, batch_num, num_batches, d_loss, g_loss, acc_real, acc_fake):
     message = '''
-                Epoch [{:5d}/{:5d}] | Batch [{:5d}/{:5d}] 
+               Epoch [{:5d}/{:5d}] | Batch [{:5d}/{:5d}] 
                   acc_real: {:6.4f} | d_loss: {:6.4f}
                   acc_fake: {:6.4f} | g_loss: {:6.4f}  
                 '''.format(
-                        epoch+1, num_epochs, batch_num+1, num_batches, 
+                        epoch, num_epochs, batch_num, num_batches, 
                         acc_real, d_loss.item(), 
                         acc_fake, g_loss.item())
     tqdm.write(message)
