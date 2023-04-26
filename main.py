@@ -28,8 +28,8 @@ update_every = 8
 print_hyperparameters(num_epochs, batch_size, nchannels, img_size, latent_size, update_every)
 
 
-cur_dir = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
-data_path = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', 'dogs-vs-cats')
+cur_dir = os.getcwd()
+data_path = os.path.join(cur_dir, 'dogs-vs-cats')
 
 # Filenames for saved stuff
 losses_fname = 'train_losses1c.npy'
@@ -44,7 +44,7 @@ def main():
     eval_mode = 0
 
     if train_mode:
-        device = setup_gpu('nvidia')
+        device = setup_gpu('mac')
 
         G = Generator(latent_size, nchannels, device).to(device)
         D = Discriminator(nchannels, device).to(device)
@@ -172,6 +172,7 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
 
 
 if __name__ == '__main__':
+
     start_time = datetime.datetime.now()
 
     main()
@@ -180,3 +181,4 @@ if __name__ == '__main__':
     elapsed_time = end_time - start_time
 
     print("Elapsed time:", elapsed_time)
+

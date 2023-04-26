@@ -38,9 +38,9 @@ def generate_z(nsamples, latent_size, device):
 
 # Save samples and losses to files
 def save_train_data(losses, samples, accuracies, losses_fname, samples_fname, acc_fname, cur_dir):
-    losses_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', losses_fname)
-    samples_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', samples_fname)
-    acc_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', acc_fname)
+    losses_fname = os.path.join(cur_dir, losses_fname)
+    samples_fname = os.path.join(cur_dir, samples_fname)
+    acc_fname = os.path.join(cur_dir, acc_fname)
         
     np.save(samples_fname, samples)
     print(f'Saved samples to file {samples_fname}')
@@ -50,6 +50,5 @@ def save_train_data(losses, samples, accuracies, losses_fname, samples_fname, ac
 
     np.save(acc_fname, accuracies)
     print(f'Saved accuracies to file {acc_fname}')
-
 
 
