@@ -14,18 +14,36 @@ class Discriminator(nn.Module):
         # GPU device!
         self.device = device
 
-        # Simple model for now
+        # Killer model now
         self.model = nn.Sequential(
             nn.Conv2d(nchannels, 64, 3, bias=False),
             nn.ReLU(True),
-            nn.Conv2d(64, 64, 3, bias=False),
+
+            nn.Conv2d(64, 32, 3, bias=False),
+            nn.BatchNorm2d(32),
             nn.ReLU(True),
+
+            nn.Conv2d(32, 16, 3, bias=False),
+            nn.BatchNorm2d(16),
+            nn.ReLU(True),
+
+            nn.Conv2d(16, 8, 3, bias=False),
+            nn.BatchNorm2d(8),
+            nn.ReLU(True),
+
             nn.Flatten(1, -1),
-            nn.Linear(230400, 128, bias=False),
+            nn.Linear(25088, 128, bias=False),
             nn.ReLU(True),
-            nn.Linear(128, 1, bias=False),
+
+            nn.Linear(128, 32, bias=False),
+            nn.ReLU(True),
+
+            nn.Linear(32, 1, bias=False),
             nn.Sigmoid()
         )
+
+        # Setup for multiple GPUs
+        # self.model = nn.DataParallel(self.model)
 
         # Layer dictionary!
         # nn.BatchNorm2d(input_channels)
@@ -67,3 +85,15 @@ class Discriminator(nn.Module):
     # Forward pass
     def forward(self, x):
         return self.model(x)
+    
+
+    def accuracy(self, preds_real, preds_fake):
+        nsamples = preds_real.size(0)
+
+        correct_real = (preds_real > 0.5).sum().item()
+        correct_fake = (preds_fake < 0.5).sum().item()
+
+        acc_real = correct_real/nsamples
+        acc_fake = correct_fake/nsamples
+
+        return acc_real, acc_fake
