@@ -1,18 +1,20 @@
+# Ensure sanity
+print('Hello World!')
+
 import torch
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 import os
+import datetime
 
 from generator import Generator
 from discriminator import Discriminator
 from utils import setup_gpu, save_train_data, generate_z
-from utils import plot_losses, view_samples, print_message
+from visualizers import plot_losses, view_samples, plot_accuracy, plot_together
+from logs import print_message, print_pytorch_stats, print_hyperparameters
 from load_data import load_data
 
-
-# Ensure sanity
-print('Hello World!')
 
 # Global Variables
 nchannels = 3
@@ -22,15 +24,17 @@ latent_size = 100
 batch_size = 128 # Number of real images fed to the descriminator per training cycle
 num_epochs = 100
 
-print('Num epochs {}, batch size {}'.format(num_epochs, batch_size))
+update_every = 8
+print_hyperparameters(num_epochs, batch_size, nchannels, img_size, latent_size, update_every)
+
 
 cur_dir = os.getcwd()
 data_path = os.path.join(cur_dir, 'dogs-vs-cats')
 
 # Filenames for saved stuff
-losses_fname = 'train_losses.npy'
-samples_fname = 'train_samples.npy'
-acc_fname = 'train_accuracies.npy'
+losses_fname = 'train_losses1c.npy'
+samples_fname = 'train_samples1c.npy'
+acc_fname = 'train_accuracies1c.npy'
 
 
 # Runner code!
@@ -44,10 +48,7 @@ def main():
 
         G = Generator(latent_size, nchannels, device).to(device)
         D = Discriminator(nchannels, device).to(device)
-
-        print('Num trainable Discriminator:', sum(p.numel() for p in D.parameters()))
-        print('Num trainable Generator:', sum(p.numel() for p in G.parameters()))
-        print('Using {} GPUs'.format(torch.cuda.device_count()))
+        print_pytorch_stats(G, D)
 
         d_optimizer = optim.Adam(D.parameters())
         g_optimizer = optim.Adam(G.parameters())
@@ -59,8 +60,10 @@ def main():
 
     if eval_mode:
         # Visualize results
-        plot_losses(losses_fname)
-        view_samples(samples_fname)
+        # plot_losses(losses_fname)
+        # plot_accuracy(acc_fname)
+        # view_samples(samples_fname)
+        plot_together(losses_fname, acc_fname)
 
 
 def train(D, G, d_optimizer, g_optimizer, latent_size, device):
@@ -82,7 +85,7 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
         
         # load data in batches of size batch_size. Weights are updated after predictions are made for every batch
         
-        real_data_loader = load_data(data_path=data_path, batch_size=batch_size, img_size=img_size)
+        real_data_loader = load_data(data_path, batch_size, img_size, nchannels)
         num_batches = 37500//batch_size
         sum_dloss, sum_gloss = 0, 0
         sum_racc, sum_facc = 0, 0
@@ -95,7 +98,6 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
 
             # Update discriminator less bc 
             # performing too well
-            update_every = 3
             if batch_num % update_every == 0:
                 d_optimizer.zero_grad()
                 
@@ -170,4 +172,13 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
 
 
 if __name__ == '__main__':
+
+    start_time = datetime.datetime.now()
+
     main()
+
+    end_time = datetime.datetime.now()
+    elapsed_time = end_time - start_time
+
+    print("Elapsed time:", elapsed_time)
+
