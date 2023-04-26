@@ -27,6 +27,9 @@ class Discriminator(nn.Module):
             nn.Sigmoid()
         )
 
+        # Setup for multiple GPUs
+        # self.model = nn.DataParallel(self.model)
+
         # Layer dictionary!
         # nn.BatchNorm2d(input_channels)
         # nn.MaxPool2d(2)
@@ -67,3 +70,15 @@ class Discriminator(nn.Module):
     # Forward pass
     def forward(self, x):
         return self.model(x)
+    
+
+    def accuracy(self, preds_real, preds_fake):
+        nsamples = preds_real.size(0)
+
+        correct_real = (preds_real > 0.5).sum().item()
+        correct_fake = (preds_fake < 0.5).sum().item()
+
+        acc_real = correct_real/nsamples
+        acc_fake = correct_fake/nsamples
+
+        return acc_real, acc_fake

@@ -23,6 +23,9 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(128, nchannels, 4, 4, 0)
         )
 
+        # Setup for multiple GPUs
+        # self.model = nn.DataParallel(self.model)
+
 
     # Trying to fool discriminator with generated images
     # so labels are 1

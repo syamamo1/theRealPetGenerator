@@ -14,6 +14,12 @@ Things that can be improved:
     - larger images than (64, 64)
     - data augmentation
 
+Running on Compute Cluster:
+    - run file using 1 GPU: qsub -l gpus=1 run.sh
+    - check status: qstat -u '*' | grep 'gpu'
+    - check status: qstat -u '*' 
+    - delete a job: qdel job_id_number
+
 Useful links:
     - Dataset: https://www.kaggle.com/c/dogs-vs-cats/data
     - MNIST Pytorch example: https://github.com/Garima13a/MNIST_GAN/blob/master/MNIST_GAN_Solution.ipynb
