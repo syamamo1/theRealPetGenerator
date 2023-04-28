@@ -1,0 +1,30 @@
+# Train or analyze performance
+train_mode: False
+eval_mode: True
+
+# Dataset specs
+dataset_size: 37500 # nsamples
+nchannels: 1
+img_size: 64 # height and width of images
+latent_size: 100
+
+# Train specs
+batch_size: 512
+num_epochs: 20
+update_every: 2 # Update discriminator every __ batches
+print_every: 2 # Print stats every __ batches
+smooth: True
+
+# GPU setup
+gpu_type: 'nvidia' # mac, nvidia
+multiple_gpus: True
+
+# For saving samples
+num_constant: 4
+
+# Filenames for saved stuff
+losses_fname: 'train_losses.npy' # Numpy array (epoch, 2) - gen, disc
+samples_fname: 'train_samples.npy' # Numpy array (epoch, 4, nchannels, img_size, img_size)
+acc_fname: 'train_accuracies.npy' # Numpy array (epoch, 2) - real, fake
+log_fname: 'train_log' # Instead of print statement
+log_extra_fname: 'train_extra' # Log loss, accuracy
