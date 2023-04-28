@@ -1,96 +1,110 @@
 # Ensure sanity
 print('Hello World!')
 
-import torch
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
 import os
 import datetime
+from torch.nn.parallel import DistributedDataParallel as DDP
+import yaml
+from easydict import EasyDict
+import torch.multiprocessing as mp
+import torch.distributed as dist
 
 from generator import Generator
 from discriminator import Discriminator
-from utils import setup_gpu, save_train_data, generate_z
-from visualizers import plot_losses, view_samples, plot_accuracy, plot_together
-from logs import print_message, print_pytorch_stats, print_hyperparameters
+from utils import setup_gpu, save_train_data, generate_z, generate_zeros
+from visualizers import plot_losses, view_samples, plot_accuracy, plot_together, view_dataset
+from logs import print_message, print_pytorch_stats, log_message, log_time, newfile
+from logs import log_extra
 from load_data import load_data
 
 
-# Global Variables
-nchannels = 3
-img_size = 64 # height and width of images
-latent_size = 100
+local = True
 
-batch_size = 128 # Number of real images fed to the descriminator per training cycle
-num_epochs = 100
-
-update_every = 8
-print_hyperparameters(num_epochs, batch_size, nchannels, img_size, latent_size, update_every)
-
-
+# Set shtuff up
 cur_dir = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
-data_path = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', 'dogs-vs-cats')
+working_dir = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator')
+config_path = 'config.yaml'
+data_path = 'dogs-vs-cats'
 
-# Filenames for saved stuff
-losses_fname = 'train_losses1c.npy'
-samples_fname = 'train_samples1c.npy'
-acc_fname = 'train_accuracies1c.npy'
+# Remote
+if not local: 
+    data_path = os.path.join(working_dir, data_path) 
+    config_path = os.path.join(working_dir, config_path) 
+
+# Load config file
+with open(config_path, 'r') as f:
+    config = yaml.safe_load(f)
+config = EasyDict(config)
+print(config)
 
 
 # Runner code!
 def main():
 
-    train_mode = 1
-    eval_mode = 0
+    # Train mode
+    if config.train_mode:
+        device, world_size = setup_gpu(config)
 
-    if train_mode:
-        device = setup_gpu('nvidia')
+        if config.multiple_gpus:          
+            print(f'Spawning on {world_size} GPUs!')
+            newfile(config)
+            mp.spawn(train, args=(config, world_size), nprocs=world_size) 
 
-        G = Generator(latent_size, nchannels, device).to(device)
-        D = Discriminator(nchannels, device).to(device)
+        else:
+            print('No spawning here!')
+            train(device, config, world_size)
+            
+
+    # Visualize results
+    if config.eval_mode:
+        # plot_losses(config)
+        # plot_accuracy(config)
+        # plot_together(config)
+        # view_samples(config)
+        view_dataset(config, data_path)
+
+
+def train(rank, config, world_size):
+    print('Starting train!')
+    if config.multiple_gpus:
+        dist.init_process_group('nccl', rank=rank, world_size=world_size)
+        print('Rank:', dist.get_rank())
+        G = Generator(config.latent_size, config.nchannels, rank).to(rank)
+        D = Discriminator(config.nchannels, rank).to(rank)
+        G.model = DDP(G.model, device_ids=[rank], broadcast_buffers=False)
+        D.model = DDP(D.model, device_ids=[rank], broadcast_buffers=False)  
         print_pytorch_stats(G, D)
 
-        d_optimizer = optim.Adam(D.parameters())
-        g_optimizer = optim.Adam(G.parameters())
+    else:
+        G = Generator(config.latent_size, config.nchannels, rank).to(rank)
+        D = Discriminator(config.nchannels, rank).to(rank)
+        print_pytorch_stats(G, D)
 
-        losses, samples, accuracies = train(D, G, d_optimizer, g_optimizer, latent_size, device)
-
-        # Save results
-        save_train_data(losses, samples, accuracies, losses_fname, samples_fname, acc_fname, cur_dir)
-
-    if eval_mode:
-        # Visualize results
-        # plot_losses(losses_fname)
-        # plot_accuracy(acc_fname)
-        # view_samples(samples_fname)
-        plot_together(losses_fname, acc_fname)
-
-
-def train(D, G, d_optimizer, g_optimizer, latent_size, device):
-    print('Starting train!')
+    d_optimizer = optim.Adam(D.parameters())
+    g_optimizer = optim.Adam(G.parameters())
 
     # Constant z to track generator change
-    num_constant = 4
-    constant_z = generate_z(num_constant, latent_size, device)
-    
-    samples = np.zeros((num_epochs, num_constant, nchannels, img_size, img_size))
-    losses = np.zeros((num_epochs, 2))
-    accuracies = np.zeros((num_epochs, 2))
+    constant_z = generate_z(config, config.num_constant, rank)
+    samples, losses, accuracies = generate_zeros(config)
 
     # Train time
     D.train()
     G.train()
-    
-    for epoch in tqdm(range(num_epochs), desc='Training Models'):
+
+    # Iterate epochs
+    num_batches = config.dataset_size//(world_size*config.batch_size)
+    for epoch in tqdm(range(config.num_epochs), desc='Training Models'):
+        print(f'Starting epoch {epoch}')
         
-        # load data in batches of size batch_size. Weights are updated after predictions are made for every batch
-        
-        real_data_loader = load_data(data_path, batch_size, img_size, nchannels)
-        num_batches = 37500//batch_size
-        sum_dloss, sum_gloss = 0, 0
-        sum_racc, sum_facc = 0, 0
-        for batch_num, (real_images, _) in tqdm(enumerate(real_data_loader), desc=f'Epoch {epoch}', total=num_batches):
-            real_images = real_images.to(device)
+        # Iterate batches
+        real_data_loader = load_data(config, data_path, world_size, rank)
+        sum_dloss, sum_gloss, sum_racc, sum_facc = 0, 0, 0, 0,
+        start_time = datetime.datetime.now()
+        for batch_num, (real_images, _) in enumerate(real_data_loader):
+            real_images = real_images.to(rank)
             
             # ============================================
             #            TRAIN DISCRIMINATOR
@@ -98,19 +112,19 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
 
             # Update discriminator less bc 
             # performing too well
-            if batch_num % update_every == 0:
+            if batch_num % config.update_every == 0:
                 d_optimizer.zero_grad()
                 
                 # Get predictions of real images
                 preds_real = D(real_images)
                 
                 # Get predictions of fake images
-                z = generate_z(batch_size, latent_size, device)
+                z = generate_z(config, config.batch_size, rank)
                 fake_images = G(z)
                 preds_fake = D(fake_images)
                 
                 # Compute loss
-                d_loss = D.loss(preds_real, preds_fake, smooth=True)
+                d_loss = D.loss(preds_real, preds_fake, config.smooth)
                 sum_dloss += d_loss.item()
 
                 # Update discriminator model
@@ -125,12 +139,12 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
             g_optimizer.zero_grad()
             
             # Generate fake images
-            z = generate_z(batch_size, latent_size, device)
+            z = generate_z(config, config.batch_size, rank)
             fake_images = G(z)
             
             # Compute loss
             preds_fake = D(fake_images)
-            g_loss = G.loss(preds_fake, smooth=True) 
+            g_loss = G.loss(preds_fake, config.smooth) 
             sum_gloss += g_loss.item()
             
             # Update generator model
@@ -142,9 +156,17 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
             sum_racc += acc_real
             sum_facc += acc_fake
 
-            # Print some loss stats
-            if batch_num % 1 == 0:
-                print_message(epoch, num_epochs, batch_num, num_batches, d_loss, g_loss, acc_real, acc_fake)
+            # Print some loss/accuracy stats
+            if batch_num % config.print_every == 0:
+                if config.multiple_gpus:
+                    # dist.barrier()
+                    log_message(config, rank, epoch, batch_num, 
+                                num_batches, d_loss, g_loss, acc_real, acc_fake)
+                    info = acc_real, acc_fake, preds_real, preds_fake
+                    log_extra(config, rank, epoch, batch_num, info)
+                else:
+                    print_message(epoch, config.num_epochs, batch_num, 
+                                num_batches, d_loss, g_loss, acc_real, acc_fake)
             
 
         # After each epoch.....
@@ -155,7 +177,7 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
 
         # Save epoch loss
         losses[epoch, 0] += sum_gloss/num_batches
-        losses[epoch, 1] += sum_dloss/(num_batches/update_every)
+        losses[epoch, 1] += sum_dloss/(num_batches/config.update_every)
          
         # Generate and save images
         G.eval() 
@@ -164,9 +186,13 @@ def train(D, G, d_optimizer, g_optimizer, latent_size, device):
         G.train()
 
         # print(torch.cuda.memory_summary())
+        if config.multiple_gpus: log_time(config, epoch, start_time)
+        else: print(f'Train time for epoch {epoch}:', datetime.datetime.now()-start_time)
 
+
+    # DONE-ZO
     print('Finished train')
-    return losses, samples, accuracies
+    save_train_data(config, losses, samples, accuracies, cur_dir)
 
 
 
@@ -179,4 +205,4 @@ if __name__ == '__main__':
     end_time = datetime.datetime.now()
     elapsed_time = end_time - start_time
 
-    print("Elapsed time:", elapsed_time)
+    print("Total time:", elapsed_time)

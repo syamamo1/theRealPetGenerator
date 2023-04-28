@@ -1,43 +1,50 @@
 import torch
 from torchvision import transforms, datasets
+from torch.utils.data.distributed import DistributedSampler
 
-def load_data(data_path, batch_size, img_size, nchannels):
+def load_data(config, data_path, world_size, rank):
     '''
     Loads real images from the specified folder (either test or train) and resizes/formats the images
     to be passed to a CNN.
 
     :params:
-    dataset_type: a path to dataset to be used
-    batch_size: the number of images that are batched together for each training cycle within each epoch.
+    data_path: a path to dataset to be used
+    config.batch_size: the number of images that are batched together for each training cycle within each epoch.
                 The number of batches (loss calculations and weight adjustments) per epoch is 
                 num_real_images/batch_size
-    img_size: height and width of output images
+    config.img_size: height and width of output images
+    rank: GPU ID
+    world_size: num GPU using
 
     :returns:
     data_loader: iterable object containing pytorch tensors of batches of real images and their labels 
     '''
-    if nchannels == 3:
-        transform = transforms.Compose([transforms.Resize(img_size),
-                                    transforms.CenterCrop(img_size),
+    if config.nchannels == 3:
+        transform = transforms.Compose([transforms.Resize(config.img_size),
+                                    transforms.CenterCrop(config.img_size),
                                     transforms.ToTensor()])
-    elif nchannels == 1:
-        transform = transforms.Compose([transforms.Resize(img_size),
-                                    transforms.Lambda(lambda img: take_first_channel(img)),
-                                    transforms.CenterCrop(img_size),
+    elif config.nchannels == 1:
+        transform = transforms.Compose([transforms.Resize(config.img_size),
+                                    transforms.Grayscale(num_output_channels=1),
+                                    transforms.CenterCrop(config.img_size),
                                     transforms.ToTensor()])
     else: 
         print('nchannels must be 1 (BW) or 3 (RGB)')
         exit()
+    
+    train_dataset = datasets.ImageFolder(data_path, transform=transform)
 
-    training_dataset = datasets.ImageFolder(data_path, transform=transform)
-    data_loader = torch.utils.data.DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
-    data_loader = data_loader
+    # Multiple GPUs
+    if config.multiple_gpus and config.train_mode:
+        data_sampler = DistributedSampler(train_dataset, world_size, rank, drop_last=True)
+        data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.batch_size, shuffle=False, sampler=data_sampler)
+
+    # 1-GPU    
+    else:
+        data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 
     return data_loader
 
-
-def take_first_channel(img):
-    return img[0, :, :].unsqueeze(0)
 
 
 '''

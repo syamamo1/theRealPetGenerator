@@ -19,22 +19,22 @@ class Generator(nn.Module):
         self.model = nn.Sequential(
             nn.ConvTranspose2d(latent_size, 512, kernel_size=4, stride=1, padding=0),
             nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(),
 
             nn.ConvTranspose2d(512, 256, 4, 2, 1),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(),
 
             nn.ConvTranspose2d(256, 128, 4, 2, 1),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(),
 
             nn.ConvTranspose2d(128, 32, 4, 2, 1),
             nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(),
 
             nn.ConvTranspose2d(32, nchannels, 4, 2, 1),
-            nn.ReLU(inplace=True)
+            nn.Sigmoid()
         )
 
         # Setup for multiple GPUs
