@@ -30,6 +30,7 @@ working_dir = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator')
 config_path = 'config.yaml'
 data_path = 'dogs-vs-cats'
 
+
 # Remote
 if not local: 
     data_path = os.path.join(working_dir, data_path) 
@@ -43,6 +44,7 @@ config = EasyDict(config)
 
 # Runner code!
 def main():
+
 
     # Train mode
     if config.train_mode:
@@ -216,6 +218,7 @@ def train(rank, config, world_size):
 
 
 if __name__ == '__main__':
+
     start_time = datetime.datetime.now()
 
     main()

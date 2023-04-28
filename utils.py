@@ -70,6 +70,7 @@ def generate_zeros2(config, world_size):
 
 
 # Save samples and losses to files
+
 def save_train_data(config, cur_dir, losses, samples, accuracies, av_preds):
     losses_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.losses_fname)
     samples_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.samples_fname)
@@ -98,6 +99,7 @@ def get_free_port():
     return port
 
 
+
 # Initialize weights from N(0, 0.02)
 def weights_init(m):
     classname = m.__class__.__name__
@@ -106,3 +108,4 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
+
