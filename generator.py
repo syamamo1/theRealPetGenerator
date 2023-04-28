@@ -17,8 +17,7 @@ class Generator(nn.Module):
         self.device = device
         
         # Input is size (nsamples, latent_size, 1, 1)
-        # ConvTranspose2d NOTE: 
-        #   output_size = (input_size - 1) * stride - 2 * padding + kernel_size
+        # ConvTranspose2d NOTE: output_size = (input_size - 1) * stride - 2 * padding + kernel_size
 
         # Outputs size (nsamples, nchannels, 64, 64)
         self.model = nn.Sequential(
@@ -34,11 +33,11 @@ class Generator(nn.Module):
             nn.BatchNorm2d(128),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(128, 32, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(32),
+            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(64),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(32, config.nchannels, 4, 2, 1, bias=False),
+            nn.ConvTranspose2d(64, config.nchannels, 4, 2, 1, bias=False),
             nn.Sigmoid()
         )
 
@@ -52,11 +51,7 @@ class Generator(nn.Module):
     def loss(self, preds):
         nsamples = preds.size(0)
 
-        # smooth, real labels = 0.9
-        if self.config.smooth_1s:
-            labels = ones(nsamples, device = self.device)*0.9
-        else:
-            labels = ones(nsamples, device = self.device)
+        labels = ones(nsamples, device = self.device) * self.config.real_labels
 
         loss = self.criterion(preds.squeeze(), labels)
         return loss

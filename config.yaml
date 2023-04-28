@@ -10,10 +10,10 @@ latent_size: 100
 # Train specs
 batch_size: 512
 num_epochs: 50
-update_every: 2 # Update discriminator every __ batches
+update_every: 1 # Update discriminator every __ batches
 print_every: 1 # Print stats every __ batches
-smooth_1s: True
-smooth_0s: False
+real_labels: 0.95
+fake_labels: 0
 
 # Optimizer
 lr: 0.0002

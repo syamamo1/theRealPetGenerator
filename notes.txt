@@ -15,7 +15,7 @@ Things that can be improved:
     - data augmentation
 
 Running on Compute Cluster:
-    - run file using 1 GPU: qsub -l gpus=1 run.sh
+    - run file run.sh using n GPUs: qsub -l gpus=n run.sh
     - check status: qstat -u '*' | grep 'gpu'
     - check status: qstat -u '*' 
     - delete a job: qdel job_id_number

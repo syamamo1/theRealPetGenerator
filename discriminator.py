@@ -19,29 +19,22 @@ class Discriminator(nn.Module):
 
         # Killer model now
         self.model = nn.Sequential(
-            nn.Conv2d(config.nchannels, 64, 3, bias=False),
+            nn.Conv2d(config.nchannels, 64, kernel_size=4, stride = 2, padding = 1, bias=False),
             nn.LeakyReLU(),
 
-            nn.Conv2d(64, 32, 3, bias=False),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(64, 128, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(128),
             nn.LeakyReLU(),
 
-            nn.Conv2d(32, 16, 3, bias=False),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(128, 256, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(256),
             nn.LeakyReLU(),
 
-            nn.Conv2d(16, 8, 3, bias=False),
-            nn.BatchNorm2d(8),
+            nn.Conv2d(256, 512, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(512),
             nn.LeakyReLU(),
 
-            nn.Flatten(1, -1),
-            nn.Linear(25088, 128, bias=False), # 64: 25088, 128: 115200
-            nn.LeakyReLU(),
-
-            nn.Linear(128, 32, bias=False),
-            nn.LeakyReLU(),
-
-            nn.Linear(32, 1, bias=False),
+            nn.Conv2d(512, 1, 4, 1, 0, bias=False),
             nn.Sigmoid()
         )
 
@@ -66,12 +59,7 @@ class Discriminator(nn.Module):
     # smoothing if we want to "generalize more"
     def real_loss(self, preds):
         nsamples = preds.size(0)
-
-        # smooth, real labels = 0.9
-        if self.config.smooth_1s:
-            labels = ones(nsamples, device = self.device)*0.9
-        else:
-            labels = ones(nsamples, device = self.device)
+        labels = ones(nsamples, device = self.device) * self.config.real_labels
 
         loss = self.criterion(preds.squeeze(), labels)
         return loss
@@ -80,12 +68,7 @@ class Discriminator(nn.Module):
     # These are fake images so their labels are 0
     def fake_loss(self, preds):
         nsamples = preds.size(0)
-
-        # smooth, fake labels = 0.1
-        if self.config.smooth_0s:
-            labels = zeros(nsamples, device = self.device) + 0.1
-        else:
-            labels = zeros(nsamples, device = self.device)
+        labels = ones(nsamples, device = self.device) * self.config.fake_labels
 
         loss = self.criterion(preds.squeeze(), labels)
         return loss
