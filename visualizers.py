@@ -33,21 +33,23 @@ def view_samples(config):
     samples = np.load(samples_fname)
 
     # Use this for epochs = 100
-    every_n_epochs = 10
+    every_n_epochs = 1
     cols = 4
     rows = int(len(samples)/every_n_epochs)
-    _, axes = plt.subplots(figsize=(7,8), nrows=rows, ncols=cols, sharex=True, sharey=True)
+    print(len(samples), ' epochs in saved samples')
+    _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols, sharex=True, sharey=True)
+    plt.subplots_adjust(wspace=0.05, hspace=0.05)
 
-    # Change (3, H, W) to (H, W, 3)
     for sample, ax_row in zip(samples[::every_n_epochs], axes):
         for img, ax in zip(sample[::int(len(sample)/cols)], ax_row):
-            print(f'Image min: {np.min(img)}, max: {np.max(img)}')
-            print(img.shape)
+            # print(f'Image min: {np.min(img)}, max: {np.max(img)}')
+            # print(img.shape)
             if config.nchannels == 1: 
                 img = img[0]
                 ax.imshow(img, cmap='gray')
 
             else: 
+                # Change (3, H, W) to (H, W, 3)
                 img = np.transpose(img, (1, 2, 0))
                 ax.imshow(img)
 
@@ -66,6 +68,7 @@ def view_samples(config):
     #         ax.xaxis.set_visible(False)
     #         ax.yaxis.set_visible(False)
 
+    
     plt.show()
 
 
@@ -75,7 +78,9 @@ def view_dataset(config, data_path):
     dataset = load_data(config, data_path, 0, 0)
     for batch, _ in dataset: break
 
-    _, axes = plt.subplots(figsize=(7,8), nrows=4, ncols=4, sharex=True, sharey=True)
+    rows = 4
+    cols = 4
+    _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols, sharex=True, sharey=True)
     count = 0
     for axes_row in axes:
         for ax in axes_row:
@@ -110,7 +115,8 @@ def plot_accuracy(config):
     plt.plot(epochs, fake_acc, '.-', label='Acc. on Fake')
     plt.plot(epochs, av_acc, '.-', label='Average')
     plt.legend()
-    plt.ylim(-0.05, 1.05)
+    ymax = max(1, np.max(accuracies)) + 0.05
+    plt.ylim(-0.05, ymax)
     plt.title('Discriminator Accuracy')
     plt.show()
 
@@ -119,7 +125,8 @@ def plot_accuracy(config):
 def plot_together(config):
     losses_fname = config.losses_fname
     acc_fname = config.acc_fname
-    _, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
+    av_preds_fname = config.av_preds_fname
+    _, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(8, 8))
     
     print(f'Plotting losses from: {losses_fname}')
     losses = np.load(losses_fname)
@@ -145,10 +152,25 @@ def plot_together(config):
     ax2.plot(x, fake_acc, '.-', label='Acc. on Fake')
     ax2.plot(x, av_acc, '.-', label='Average')
     ax2.legend()
-    ax2.set_ylim(-0.05, 1.05)
+    ymax = max(1, np.max(accuracies)) + 0.05
+    ax2.set_ylim(-0.05, ymax)
     ax2.set_title('Discriminator Accuracy')
-    ax2.set_xlabel('Epoch')
     ax2.set_ylabel('Accuracy')
     ax2.grid(True)
+
+    print(f'Plotting average predictions from: {acc_fname}')
+    av_preds = np.load(av_preds_fname)
+    av_pred_real = av_preds[:, 0]
+    av_pred_fake = av_preds[:, 1]
+
+    ax3.plot(x, av_pred_real, '.-', label='Av. Pred on Real')
+    ax3.plot(x, av_pred_fake, '.-', label='Av. Pred on Fake')
+    ax3.legend()
+    ymax = max(1, np.max(accuracies)) + 0.05
+    ax3.set_ylim(-0.05, ymax)
+    ax3.set_title('Discriminator Average Prediciton')
+    ax3.set_xlabel('Epoch')
+    ax3.set_ylabel('Prediciton (of being real)')
+    ax3.grid(True)
 
     plt.show()

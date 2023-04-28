@@ -1,12 +1,18 @@
 import torch
 from tqdm import tqdm
 import datetime
+from discriminator import Discriminator
+from generator import Generator
 
 
 # Print num parameters, num GPUs
-def print_pytorch_stats(G, D):
-    print('Num trainable Discriminator:', sum(p.numel() for p in D.parameters()))
-    print('Num trainable Generator:', sum(p.numel() for p in G.parameters()))
+def print_pytorch_stats(config):
+    D = Discriminator(config)
+    G = Generator(config)
+    nD = round(sum(p.numel() for p in D.parameters())/1e6, 3)
+    nG = round(sum(p.numel() for p in G.parameters())/1e6, 3)
+    print(f'Num trainable Discriminator: {nD} M')
+    print(f'Num trainable Generator: {nG} M')
 
 
 # Print messages about training
@@ -56,11 +62,16 @@ def newfile(config):
 
 # Logs stuffs
 def log_extra(config, rank, epoch, batch, info):
-    acc_real, acc_fake, preds_real, preds_fake = info
+    acc_real, acc_fake, preds_real, preds_fake, av_real_pred, av_fake_pred = info
+    preds_real = preds_real.squeeze()
+    preds_fake = preds_fake.squeeze()
+    nprint = 5
     message1 = f'''
-    Rank {rank} | epoch {epoch} | batch {batch} 
-    Acc. real: {acc_real} | Preds for real {preds_real.squeeze()}: {preds_real.squeeze()[:10]}
-    Acc. fake: {acc_fake} | Preds for fake {preds_fake.squeeze().size()}: {preds_fake.squeeze()[:10]}
+Rank {rank} | epoch {epoch} | batch {batch} 
+Acc. REAL: {round(acc_real, 2)} | Size: {preds_real.size()[0]} | Average Pred: {round(av_real_pred, 2)}: 
+    {preds_real[:nprint].tolist()}
+Acc. FAKE: {round(acc_fake, 2)} | Size: {preds_fake.size()[0]} | Average Pred: {round(av_fake_pred, 2)}: 
+    {preds_fake[:nprint].tolist()}
     '''
 
     with open(config.log_extra_fname, 'a') as f:

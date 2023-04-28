@@ -5,8 +5,11 @@ from torch import ones, zeros
 # Outputs the PROBABILITY that an image is REAL
 # Takes in an image
 class Discriminator(nn.Module):
-    def __init__(self, nchannels, device):
+    def __init__(self, config, device=None):
         super(Discriminator, self).__init__()
+
+        # yaml
+        self.config = config
 
         # Binary cross entropy: evaluates probabilities
         self.criterion = nn.BCELoss() 
@@ -16,7 +19,7 @@ class Discriminator(nn.Module):
 
         # Killer model now
         self.model = nn.Sequential(
-            nn.Conv2d(nchannels, 64, 3, bias=False),
+            nn.Conv2d(config.nchannels, 64, 3, bias=False),
             nn.LeakyReLU(),
 
             nn.Conv2d(64, 32, 3, bias=False),
@@ -32,7 +35,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(),
 
             nn.Flatten(1, -1),
-            nn.Linear(25088, 128, bias=False),
+            nn.Linear(25088, 128, bias=False), # 64: 25088, 128: 115200
             nn.LeakyReLU(),
 
             nn.Linear(128, 32, bias=False),
@@ -52,20 +55,20 @@ class Discriminator(nn.Module):
     
 
     # Sum of real, fake loss
-    def loss(self, real_preds, fake_preds, smooth=False):
-        real_loss = self.real_loss(real_preds, smooth)
-        fake_loss = self.fake_loss(fake_preds, smooth)
+    def loss(self, real_preds, fake_preds):
+        real_loss = self.real_loss(real_preds)
+        fake_loss = self.fake_loss(fake_preds)
         loss = real_loss + fake_loss
         return loss
 
 
     # These are real images so their labels are 1
     # smoothing if we want to "generalize more"
-    def real_loss(self, preds, smooth=False):
+    def real_loss(self, preds):
         nsamples = preds.size(0)
 
         # smooth, real labels = 0.9
-        if smooth:
+        if self.config.smooth_1s:
             labels = ones(nsamples, device = self.device)*0.9
         else:
             labels = ones(nsamples, device = self.device)
@@ -75,11 +78,11 @@ class Discriminator(nn.Module):
     
 
     # These are fake images so their labels are 0
-    def fake_loss(self, preds, smooth=False):
+    def fake_loss(self, preds):
         nsamples = preds.size(0)
 
         # smooth, fake labels = 0.1
-        if smooth:
+        if self.config.smooth_0s:
             labels = zeros(nsamples, device = self.device) + 0.1
         else:
             labels = zeros(nsamples, device = self.device)
@@ -92,7 +95,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         return self.model(x)
     
-
+    # Num correct/Num samples
     def accuracy(self, preds_real, preds_fake):
         correct_real = (preds_real > 0.5).sum().item()
         correct_fake = (preds_fake < 0.5).sum().item()

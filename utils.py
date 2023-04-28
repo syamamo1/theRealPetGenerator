@@ -2,6 +2,7 @@ import torch
 import os
 import numpy as np
 import socket
+import torch.nn as nn
 # import torch.distributed as dist
 
 
@@ -51,18 +52,29 @@ def generate_z(config, nsamples, device):
 
 
 # Return zeros to store stuff in
-def generate_zeros(config):
+def generate_zeros1(config):
     samples = np.zeros((config.num_epochs, config.num_constant, config.nchannels, config.img_size, config.img_size))
     losses = np.zeros((config.num_epochs, 2))
     accuracies = np.zeros((config.num_epochs, 2))
-    return samples, losses, accuracies
+    av_preds = np.zeros((config.num_epochs, 2))
+    return samples, losses, accuracies, av_preds
+
+
+# Return zeros to store stuff in, 2
+def generate_zeros2(config, world_size):
+    nzeros = config.batch_size//world_size
+    d_losses, g_losses = np.zeros(nzeros), np.zeros(nzeros)
+    real_accs, fake_accs = np.zeros(nzeros), np.zeros(nzeros)
+    realpreds, fakepreds = np.zeros(nzeros), np.zeros(nzeros)
+    return d_losses, g_losses, real_accs, fake_accs, realpreds, fakepreds
 
 
 # Save samples and losses to files
-def save_train_data(config, losses, samples, accuracies, cur_dir):
+def save_train_data(config, cur_dir, losses, samples, accuracies, av_preds):
     losses_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.losses_fname)
     samples_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.samples_fname)
     acc_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.acc_fname)
+    av_preds_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.av_preds_fname)
         
     np.save(samples_fname, samples)
     print(f'Saved samples to file {samples_fname}')
@@ -72,6 +84,9 @@ def save_train_data(config, losses, samples, accuracies, cur_dir):
 
     np.save(acc_fname, accuracies)
     print(f'Saved accuracies to file {acc_fname}')
+
+    np.save(av_preds_fname, av_preds)
+    print(f'Saved average predictions to file {av_preds_fname}')
 
 
 # Thanks kento
@@ -83,4 +98,11 @@ def get_free_port():
     return port
 
 
-
+# Initialize weights from N(0, 0.02)
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)

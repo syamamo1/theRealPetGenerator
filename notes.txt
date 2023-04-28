@@ -25,3 +25,8 @@ Useful links:
     - MNIST Pytorch example: https://github.com/Garima13a/MNIST_GAN/blob/master/MNIST_GAN_Solution.ipynb
     - MNIST TF example: https://www.tensorflow.org/tutorials/generative/dcgan
     - Celeb Pytorch example: https://pytorch.org/tutorials/beginner/dcgan_faces_tutorial.html
+
+
+Memory Stuff:
+    - 512,64,64
+    - x,128,128

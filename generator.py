@@ -4,8 +4,11 @@ from torch import ones
 # Takes in a 1D latent vector (noise)
 # Outputs a real-lookin' photo of a cat/dog
 class Generator(nn.Module):
-    def __init__(self, latent_size, nchannels, device):
+    def __init__(self, config, device=None):
         super(Generator, self).__init__()
+
+        # yaml
+        self.config = config
 
         # Binary cross entropy: evaluates probabilities
         self.criterion = nn.BCELoss() 
@@ -14,26 +17,28 @@ class Generator(nn.Module):
         self.device = device
         
         # Input is size (nsamples, latent_size, 1, 1)
-        # output_height = (input_height - 1) * stride - 2 * padding + kernel_size
-        # output_width = (input_width - 1) * stride - 2 * padding + kernel_size
+        # ConvTranspose2d NOTE: 
+        #   output_size = (input_size - 1) * stride - 2 * padding + kernel_size
+
+        # Outputs size (nsamples, nchannels, 64, 64)
         self.model = nn.Sequential(
-            nn.ConvTranspose2d(latent_size, 512, kernel_size=4, stride=1, padding=0),
+            nn.ConvTranspose2d(config.latent_size, 512, kernel_size=4, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(512, 256, 4, 2, 1),
+            nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(256, 128, 4, 2, 1),
+            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(128, 32, 4, 2, 1),
+            nn.ConvTranspose2d(128, 32, 4, 2, 1, bias=False),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(32, nchannels, 4, 2, 1),
+            nn.ConvTranspose2d(32, config.nchannels, 4, 2, 1, bias=False),
             nn.Sigmoid()
         )
 
@@ -44,11 +49,11 @@ class Generator(nn.Module):
     # Trying to fool discriminator with generated images
     # so labels are 1
     # smoothing if we want to "generalize more"
-    def loss(self, preds, smooth=False):
+    def loss(self, preds):
         nsamples = preds.size(0)
 
         # smooth, real labels = 0.9
-        if smooth:
+        if self.config.smooth_1s:
             labels = ones(nsamples, device = self.device)*0.9
         else:
             labels = ones(nsamples, device = self.device)
