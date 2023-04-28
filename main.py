@@ -122,7 +122,7 @@ def train(rank, config, world_size):
 
             # Update discriminator less bc 
             # performing too well
-            if batch_num % config.update_every == 1:
+            if (batch_num % config.update_every == 1) or (config.update_every == 1):
                 d_optimizer.zero_grad()
                 
                 # Get predictions of real images
