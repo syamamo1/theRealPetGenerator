@@ -41,9 +41,6 @@ class Generator(nn.Module):
             nn.Sigmoid()
         )
 
-        # Setup for multiple GPUs
-        # self.model = nn.DataParallel(self.model)
-
 
     # Trying to fool discriminator with generated images
     # so labels are 1

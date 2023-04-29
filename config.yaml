@@ -8,11 +8,11 @@ img_size: 64 # height and width of images
 latent_size: 100
 
 # Train specs
-batch_size: 512
-num_epochs: 50
+batch_size: 16
+num_epochs: 100
 update_every: 1 # Update discriminator every __ batches
-print_every: 1 # Print stats every __ batches
-real_labels: 0.95
+print_every: 20 # Print stats every __ batches
+real_labels: 1
 fake_labels: 0
 
 # Optimizer
@@ -34,4 +34,5 @@ av_preds_fname: 'av_preds.npy' # # Numpy array (epoch, 2) - real, fake
 
 # Filenames for logging
 log_fname: 'train_log' # Instead of print statement
-log_extra_fname: 'train_extra' # Log loss, accuracy
+d_fname: 'd_model.pth'
+g_fname: 'g_model.pth'

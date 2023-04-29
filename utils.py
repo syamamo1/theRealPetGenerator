@@ -3,6 +3,7 @@ import os
 import numpy as np
 import socket
 import torch.nn as nn
+import math
 # import torch.distributed as dist
 
 
@@ -61,11 +62,10 @@ def generate_zeros1(config):
 
 
 # Return zeros to store stuff in, 2
-def generate_zeros2(config, world_size):
-    nzeros = config.batch_size//world_size
-    d_losses, g_losses = np.zeros(nzeros), np.zeros(nzeros)
-    real_accs, fake_accs = np.zeros(nzeros), np.zeros(nzeros)
-    realpreds, fakepreds = np.zeros(nzeros), np.zeros(nzeros)
+def generate_zeros2(num_batches):
+    d_losses, g_losses = np.zeros(num_batches), np.zeros(num_batches)
+    real_accs, fake_accs = np.zeros(num_batches), np.zeros(num_batches)
+    realpreds, fakepreds = np.zeros(num_batches), np.zeros(num_batches)
     return d_losses, g_losses, real_accs, fake_accs, realpreds, fakepreds
 
 
@@ -87,6 +87,32 @@ def save_train_data(config, cur_dir, losses, samples, accuracies, av_preds):
 
     np.save(av_preds_fname, av_preds)
     print(f'Saved average predictions to file {av_preds_fname}')
+
+
+# Save model for loading in future
+def save_models(G, D, config):
+    g_path = config.g_path
+    d_path = config.d_path
+    
+    torch.save(G.model, g_path)
+    print('Saved Generator model to:', g_path)
+
+    torch.save(D.model, d_path)
+    print('Saved Discriminator model to:', d_path)
+    
+
+# Load trained model
+def load_models(G, D, config):
+    g_path = config.g_path
+    d_path = config.d_path
+    
+    G.model = torch.load(g_path)
+    print('Loaded Generator model from:', g_path)
+    
+    D.model = torch.load(d_path)
+    print('Loaded Discriminator model from:', g_path)
+
+    return G, D
 
 
 # Thanks kento

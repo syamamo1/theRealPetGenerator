@@ -1,6 +1,3 @@
-# Ensure sanity
-print('Hello World!')
-
 import torch
 import torch.optim as optim
 import numpy as np
@@ -12,13 +9,14 @@ import yaml
 from easydict import EasyDict
 import torch.multiprocessing as mp
 import torch.distributed as dist
+import math
 
 from generator import Generator
 from discriminator import Discriminator
-from utils import setup_gpu, save_train_data, generate_z, generate_zeros1, generate_zeros2, weights_init
+from utils import setup_gpu, generate_z, generate_zeros1, generate_zeros2
+from utils import save_train_data, save_models, weights_init
 from visualizers import plot_losses, view_samples, plot_accuracy, plot_together, view_dataset
 from logs import print_message, print_pytorch_stats, log_message, log_time, newfile
-from logs import log_extra
 from load_data import load_data
 
 
@@ -64,9 +62,9 @@ def main():
     if config.eval_mode:
         # plot_losses(config)
         # plot_accuracy(config)
-        # plot_together(config)
+        plot_together(config)
         view_samples(config)
-        view_dataset(config, data_path)
+        # view_dataset(config, data_path)
 
 
 # Rank is device (torch.cuda/torch.mps) for 1GPU
@@ -106,12 +104,12 @@ def train(rank, config, world_size):
     G.train()
 
     # Iterate epochs
-    num_batches = len(data_loader.dataset)//(world_size*config.batch_size)
+    num_batches = math.ceil(len(data_loader.dataset)/(world_size*config.batch_size))
     for epoch in tqdm(np.arange(1, config.num_epochs+1), desc='Training Models'):
         if not config.multiple_gpus: print(f'Starting epoch {epoch}')
         
         # Iterate batches
-        d_losses, g_losses, real_accs, fake_accs, realpreds, fakepreds = generate_zeros2(config, world_size)
+        d_losses, g_losses, real_accs, fake_accs, realpreds, fakepreds = generate_zeros2(num_batches)
         start_time = datetime.datetime.now()
         for batch_num, (real_images, _) in enumerate(data_loader, 1):
             real_images = real_images.to(rank)
@@ -160,24 +158,23 @@ def train(rank, config, world_size):
             # Save some stats
             av_real_pred = torch.mean(preds_real).item()
             av_fake_pred = torch.mean(preds_fake).item()
-            realpreds[batch_num] += av_real_pred
-            fakepreds[batch_num] += av_fake_pred
+            realpreds[batch_num-1] += av_real_pred
+            fakepreds[batch_num-1] += av_fake_pred
 
-            d_losses[batch_num] += d_loss.item()
-            g_losses[batch_num] += g_loss.item()
+            d_losses[batch_num-1] += d_loss.item()
+            g_losses[batch_num-1] += g_loss.item()
 
             acc_real, acc_fake = D.accuracy(preds_real, preds_fake)
-            real_accs[batch_num] += acc_real
-            fake_accs[batch_num] += acc_fake
+            real_accs[batch_num-1] += acc_real
+            fake_accs[batch_num-1] += acc_fake
 
             # Print some loss/pred/accuracy stats
             if batch_num % config.print_every == 0:
                 if config.multiple_gpus:
                     # dist.barrier()
-                    log_message(config, rank, epoch, batch_num, num_batches, 
-                                d_loss, g_loss, acc_real, acc_fake)
-                    info = acc_real, acc_fake, preds_real, preds_fake, av_real_pred, av_fake_pred
-                    log_extra(config, rank, epoch, batch_num, info)
+                    info1 = config, rank, epoch, batch_num, num_batches, d_loss, g_loss
+                    info2 = acc_real, acc_fake, av_real_pred, av_fake_pred
+                    log_message(info1, info2)
                 else:
                     print_message(epoch, config.num_epochs, batch_num, 
                                 num_batches, d_loss, g_loss, acc_real, acc_fake)
@@ -201,9 +198,10 @@ def train(rank, config, world_size):
         G.eval() 
         with torch.no_grad():
             generated_images = G(constant_z)
-            samples[epoch] += generated_images.detach().cpu().numpy()
+            samples[epoch-1] += generated_images.detach().cpu().numpy()
         G.train()
 
+        # Print epoch duration
         # print(torch.cuda.memory_summary())
         if config.multiple_gpus: log_time(config, epoch, start_time)
         else: print(f'Train time for epoch {epoch}:', datetime.datetime.now()-start_time)
@@ -211,6 +209,7 @@ def train(rank, config, world_size):
     # DONE-ZO
     print('Finished train')
     save_train_data(config, cur_dir, losses, samples, accuracies, av_preds)
+    save_models(G, D, config)
 
 
 
@@ -221,6 +220,6 @@ if __name__ == '__main__':
     main()
 
     end_time = datetime.datetime.now()
-    elapsed_time = end_time - start_time
+    elapsed_time = (end_time - start_time).strftime("%H:%M:%S")
 
-    print("Total time:", elapsed_time)
+    print("Total time:", elapsed_time, f' at {end_time.strftime("%H:%M:%S")}')

@@ -38,9 +38,6 @@ class Discriminator(nn.Module):
             nn.Sigmoid()
         )
 
-        # Setup for multiple GPUs
-        # self.model = nn.DataParallel(self.model)
-
         # Layer dictionary!
         # nn.BatchNorm2d(input_channels)
         # nn.MaxPool2d(2)

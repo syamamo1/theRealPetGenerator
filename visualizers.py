@@ -33,8 +33,8 @@ def view_samples(config):
     samples = np.load(samples_fname)
 
     # Use this for epochs = 100
-    every_n_epochs = 1
-    cols = 4
+    every_n_epochs = 10
+    cols = 8
     rows = int(len(samples)/every_n_epochs)
     print(len(samples), ' epochs in saved samples')
     _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols, sharex=True, sharey=True)
