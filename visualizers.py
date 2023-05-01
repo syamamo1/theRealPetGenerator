@@ -33,7 +33,7 @@ def view_samples(config):
     samples = np.load(samples_fname)
 
     # Use this for epochs = 100
-    every_n_epochs = 10
+    every_n_epochs = 40
     cols = 8
     rows = int(len(samples)/every_n_epochs)
     print(len(samples), ' epochs in saved samples')
@@ -170,7 +170,7 @@ def plot_together(config):
     ax3.set_ylim(-0.05, ymax)
     ax3.set_title('Discriminator Average Prediciton')
     ax3.set_xlabel('Epoch')
-    ax3.set_ylabel('Prediciton (of being real)')
+    ax3.set_ylabel('Prediciton')
     ax3.grid(True)
 
     plt.show()

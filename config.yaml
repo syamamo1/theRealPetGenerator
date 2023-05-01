@@ -1,19 +1,22 @@
 # Train or analyze performance
-train_mode: 1
-eval_mode: 0
+train_mode: 0
+eval_mode: 1
+generate_mode: 0
 
 # Dataset specs
-nchannels: 3
-img_size: 64 # height and width of images
+nchannels: 3 # 1 or 3
+img_size: 64 # = height = width
 latent_size: 100
 
 # Train specs
-batch_size: 16
-num_epochs: 100
+batch_size: 16 # True batch size is batch_size * n_GPU
+num_epochs: 200
 update_every: 1 # Update discriminator every __ batches
 print_every: 20 # Print stats every __ batches
-real_labels: 1
-fake_labels: 0
+
+# Data labels
+real_labels: 1 # Can smooth here
+fake_labels: 0 # Can smooth here
 
 # Optimizer
 lr: 0.0002
@@ -23,16 +26,18 @@ beta1: 0.5
 gpu_type: 'nvidia' # mac, nvidia
 multiple_gpus: True
 
-# For saving samples
-num_constant: 8
+# Num samples to make
+num_constant: 10 # Number of samples to save per epoch
+num_generate: 20 # Number of samples to generate in generate_mode
 
 # Filenames for saved stuff
-losses_fname: 'train_losses.npy' # Numpy array (epoch, 2) - gen, disc
-samples_fname: 'train_samples.npy' # Numpy array (epoch, 4, nchannels, img_size, img_size)
-acc_fname: 'train_accuracies.npy' # Numpy array (epoch, 2) - real, fake
-av_preds_fname: 'av_preds.npy' # # Numpy array (epoch, 2) - real, fake
-
+generated_fname: 'generated_fname.npy' # Numpy array (num_generate, nchannels, img_size, img_size) to save final model generations
+samples_fname: 'train_samples.npy' # Numpy array (epoch, num_constant, nchannels, img_size, img_size) to save samples epoch by epoch
+losses_fname: 'train_losses_200.npy' # Numpy array (epoch, 2) - gen, disc
+acc_fname: 'train_accuracies_200.npy' # Numpy array (epoch, 2) - real, fake
+av_preds_fname: 'train_av_preds_200.npy' # Numpy array (epoch, 2) - real, fake
+ 
 # Filenames for logging
 log_fname: 'train_log' # Instead of print statement
-d_fname: 'd_model.pth'
-g_fname: 'g_model.pth'
+d_fname: 'd_model.pth' # Save D model here
+g_fname: 'g_model.pth' # Save G model here

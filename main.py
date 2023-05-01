@@ -16,22 +16,26 @@ from discriminator import Discriminator
 from utils import setup_gpu, generate_z, generate_zeros1, generate_zeros2
 from utils import save_train_data, save_models, weights_init
 from visualizers import plot_losses, view_samples, plot_accuracy, plot_together, view_dataset
-from logs import print_message, print_pytorch_stats, log_message, log_time, newfile
+from logs import print_message, log_pytorch_stats, log_message, log_time, newfile, log
 from load_data import load_data
 
 
-local = 0
+# Must specify this
+remote = 0
 
-# Set shtuff up
-cur_dir = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
-working_dir = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator')
+
+# Filenames
 config_path = 'config.yaml'
 data_path = 'dogs-vs-cats'
 
-# Remote
-if not local: 
-    data_path = os.path.join(working_dir, data_path) 
+
+# Get correct directory
+if remote: 
+    cur_dir = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
+    working_dir = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator')
+    data_path = os.path.join(working_dir, data_path)
     config_path = os.path.join(working_dir, config_path) 
+
 
 # Load config file
 with open(config_path, 'r') as f:
@@ -44,48 +48,44 @@ def main():
 
     # Train mode
     if config.train_mode:
-        print(config)
+        log(config, config)
         device, world_size = setup_gpu(config)
-        print_pytorch_stats(config)
+        log_pytorch_stats(config)
 
         if config.multiple_gpus:          
-            print(f'Spawning on {world_size} GPUs!')
+            log(config, f'Spawning train() on {world_size} GPUs!')
             newfile(config)
             mp.spawn(train, args=(config, world_size), nprocs=world_size) 
 
         else:
-            print('No spawning here!')
+            log(config, 'No spawning here!')
             train(device, config, world_size)
             
 
     # Visualize results
     if config.eval_mode:
-        # plot_losses(config)
-        # plot_accuracy(config)
         plot_together(config)
-        view_samples(config)
+        # view_samples(config)
         # view_dataset(config, data_path)
+
+
+    # Generate images
+    if config.generate_mode:
+        if config.multiple_gpus:          
+            log(config, f'Spawning generate_images() on {world_size} GPUs!')
+            mp.spawn(generate_images, args=(config, world_size), nprocs=world_size) 
+
+        else:
+            log(config, 'No spawning here!')
+            generate_images(device, config, world_size)
 
 
 # Rank is device (torch.cuda/torch.mps) for 1GPU
 # or 1...n for multi GPU
 def train(rank, config, world_size):
-    # Load data
+    # Load data, models
     data_loader = load_data(config, data_path, world_size, rank)
-
-    # Load models
-    if config.multiple_gpus:
-        print(f'Starting train! Rank {rank}')
-        dist.init_process_group('nccl', rank=rank, world_size=world_size)
-        G = Generator(config, rank).to(rank)
-        D = Discriminator(config, rank).to(rank)
-        G.model = DDP(G.model, device_ids=[rank], broadcast_buffers=False)
-        D.model = DDP(D.model, device_ids=[rank], broadcast_buffers=False)  
-
-    else:
-        print('Starting train!')
-        G = Generator(config, rank).to(rank)
-        D = Discriminator(config, rank).to(rank)
+    G, D = load_models(config, rank, world_size)
 
     # Randomly initialize weights to N(0, 0.02)
     G.apply(weights_init)
@@ -106,7 +106,7 @@ def train(rank, config, world_size):
     # Iterate epochs
     num_batches = math.ceil(len(data_loader.dataset)/(world_size*config.batch_size))
     for epoch in tqdm(np.arange(1, config.num_epochs+1), desc='Training Models'):
-        if not config.multiple_gpus: print(f'Starting epoch {epoch}')
+        if not config.multiple_gpus: log(config, f'Starting epoch {epoch}')
         
         # Iterate batches
         d_losses, g_losses, real_accs, fake_accs, realpreds, fakepreds = generate_zeros2(num_batches)
@@ -170,12 +170,12 @@ def train(rank, config, world_size):
 
             # Print some loss/pred/accuracy stats
             if batch_num % config.print_every == 0:
-                if config.multiple_gpus:
+                if (config.multiple_gpus) and (rank == 0):
                     # dist.barrier()
-                    info1 = config, rank, epoch, batch_num, num_batches, d_loss, g_loss
+                    info1 = config, rank, world_size, epoch, batch_num, num_batches, d_loss, g_loss
                     info2 = acc_real, acc_fake, av_real_pred, av_fake_pred
                     log_message(info1, info2)
-                else:
+                elif not config.multiple_gpus:
                     print_message(epoch, config.num_epochs, batch_num, 
                                 num_batches, d_loss, g_loss, acc_real, acc_fake)
 
@@ -204,13 +204,54 @@ def train(rank, config, world_size):
         # Print epoch duration
         # print(torch.cuda.memory_summary())
         if config.multiple_gpus: log_time(config, epoch, start_time)
-        else: print(f'Train time for epoch {epoch}:', datetime.datetime.now()-start_time)
+        else: log(config, f'Train time for epoch {epoch}:', datetime.datetime.now()-start_time)
 
     # DONE-ZO
-    print('Finished train')
+    log(config, 'Finished train')
     save_train_data(config, cur_dir, losses, samples, accuracies, av_preds)
     save_models(G, D, config)
 
+
+
+# Generate images
+def generate_images(rank, config, world_size):
+
+    # Load models
+    G, _ = load_models(config, rank, world_size)
+
+    # Generate noise for generator input
+    z = generate_z(config, config.num_generate, rank)
+
+    # Generate and save images
+    G.eval() 
+    with torch.no_grad():
+        generated_images = G(z)
+        generated_images = generated_images.detach().cpu().numpy()
+
+    # Save images
+    generated_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.generated_fname)
+    np.save(generated_fname, generated_images)
+    log(config, 'Saved generated images to:', generated_fname)
+
+
+
+# Load Generator, Discriminator
+def load_models(config, rank, world_size):
+    # Load models
+    if config.multiple_gpus:
+        log(config, f'Starting train! Rank {rank}')
+        dist.init_process_group('nccl', rank=rank, world_size=world_size)
+        G = Generator(config, rank).to(rank)
+        D = Discriminator(config, rank).to(rank)
+        G.model = DDP(G.model, device_ids=[rank], broadcast_buffers=False)
+        D.model = DDP(D.model, device_ids=[rank], broadcast_buffers=False)  
+
+    else:
+        log(config, 'Starting train!')
+        G = Generator(config, rank).to(rank)
+        D = Discriminator(config, rank).to(rank)
+
+    return G, D
 
 
 
@@ -220,6 +261,6 @@ if __name__ == '__main__':
     main()
 
     end_time = datetime.datetime.now()
-    elapsed_time = (end_time - start_time).strftime("%H:%M:%S")
+    elapsed_time = end_time - start_time
 
-    print("Total time:", elapsed_time, f' at {end_time.strftime("%H:%M:%S")}')
+    log(config, "Total time:", elapsed_time, f' at {end_time}')

@@ -3,6 +3,7 @@ import os
 import numpy as np
 import socket
 import torch.nn as nn
+from logs import log
 import math
 # import torch.distributed as dist
 
@@ -11,24 +12,24 @@ import math
 def setup_gpu(config):
     world_size = torch.cuda.device_count()
 
-    print(f'Setting up GPU on: {config.gpu_type}')
-    print('Using {} GPUs'.format(world_size))
+    log(config, f'Setting up GPU on: {config.gpu_type}')
+    log(config, 'Using {} GPUs'.format(world_size))
 
     # MAC
     if config.gpu_type == 'mac':
         available = torch.backends.mps.is_available()
         if available:
-            print('Using GPU: True')
+            log(config, 'Using GPU: True')
             device = torch.device('mps')
         else:
-            print('Using GPU: False')
+            log(config, 'Using GPU: False')
             device = None
             
     # NVIDIA
     elif config.gpu_type == 'nvidia':
         available = torch.cuda.is_available()
         if available:
-            print('Using GPU: True')
+            log(config, 'Using GPU: True')
 
             if config.multiple_gpus:
                 os.environ['MASTER_ADDR'] = 'localhost'
@@ -39,7 +40,7 @@ def setup_gpu(config):
                 device = torch.device('cuda')
             
         else:
-            print('Using GPU: False')
+            log(config, 'Using GPU: False')
             device = None 
     
     return device, world_size
@@ -77,28 +78,28 @@ def save_train_data(config, cur_dir, losses, samples, accuracies, av_preds):
     av_preds_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.av_preds_fname)
         
     np.save(samples_fname, samples)
-    print(f'Saved samples to file {samples_fname}')
+    log(config, f'Saved samples to file {samples_fname}')
 
     np.save(losses_fname, losses)
-    print(f'Saved losses to file {losses_fname}')
+    log(config, f'Saved losses to file {losses_fname}')
 
     np.save(acc_fname, accuracies)
-    print(f'Saved accuracies to file {acc_fname}')
+    log(config, f'Saved accuracies to file {acc_fname}')
 
     np.save(av_preds_fname, av_preds)
-    print(f'Saved average predictions to file {av_preds_fname}')
+    log(config, f'Saved average predictions to file {av_preds_fname}')
 
 
 # Save model for loading in future
 def save_models(G, D, config):
-    g_path = config.g_path
-    d_path = config.d_path
+    g_path = config.g_fname
+    d_path = config.d_fname
     
     torch.save(G.model, g_path)
-    print('Saved Generator model to:', g_path)
+    log(config, 'Saved Generator model to:', g_path)
 
     torch.save(D.model, d_path)
-    print('Saved Discriminator model to:', d_path)
+    log(config, 'Saved Discriminator model to:', d_path)
     
 
 # Load trained model
@@ -107,10 +108,10 @@ def load_models(G, D, config):
     d_path = config.d_path
     
     G.model = torch.load(g_path)
-    print('Loaded Generator model from:', g_path)
+    log(config, 'Loaded Generator model from:', g_path)
     
     D.model = torch.load(d_path)
-    print('Loaded Discriminator model from:', g_path)
+    log(config, 'Loaded Discriminator model from:', g_path)
 
     return G, D
 
