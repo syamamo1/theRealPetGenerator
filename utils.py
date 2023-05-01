@@ -13,7 +13,7 @@ def setup_gpu(config):
     world_size = torch.cuda.device_count()
 
     log(config, f'Setting up GPU on: {config.gpu_type}')
-    log(config, 'Using {} GPUs'.format(world_size))
+    log(config, 'Using {} NVIDIA GPUs'.format(world_size))
 
     # MAC
     if config.gpu_type == 'mac':
@@ -71,11 +71,11 @@ def generate_zeros2(num_batches):
 
 
 # Save samples and losses to files
-def save_train_data(config, cur_dir, losses, samples, accuracies, av_preds):
-    losses_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.losses_fname)
-    samples_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.samples_fname)
-    acc_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.acc_fname)
-    av_preds_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.av_preds_fname)
+def save_train_data(config, cwd, losses, samples, accuracies, av_preds):
+    losses_fname = os.path.join(cwd, config.losses_fname)
+    samples_fname = os.path.join(cwd, config.samples_fname)
+    acc_fname = os.path.join(cwd, config.acc_fname)
+    av_preds_fname = os.path.join(cwd, config.av_preds_fname)
         
     np.save(samples_fname, samples)
     log(config, f'Saved samples to file {samples_fname}')
@@ -91,9 +91,9 @@ def save_train_data(config, cur_dir, losses, samples, accuracies, av_preds):
 
 
 # Save model for loading in future
-def save_models(G, D, config):
-    g_path = config.g_fname
-    d_path = config.d_fname
+def save_models(config, G, D, cwd):
+    g_path = os.path.join(cwd, config.g_fname)
+    d_path = os.path.join(cwd, config.d_fname)
     
     torch.save(G.model, g_path)
     log(config, 'Saved Generator model to:', g_path)
@@ -103,9 +103,9 @@ def save_models(G, D, config):
     
 
 # Load trained model
-def load_models(G, D, config):
-    g_path = config.g_path
-    d_path = config.d_path
+def load_models(config, G, D, cwd):
+    g_path = os.path.join(cwd, config.g_fname)
+    d_path = os.path.join(cwd, config.d_fname)
     
     G.model = torch.load(g_path)
     log(config, 'Loaded Generator model from:', g_path)
@@ -114,6 +114,7 @@ def load_models(G, D, config):
     log(config, 'Loaded Discriminator model from:', g_path)
 
     return G, D
+
 
 
 # Thanks kento

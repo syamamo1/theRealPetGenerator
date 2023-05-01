@@ -14,8 +14,9 @@ import math
 from generator import Generator
 from discriminator import Discriminator
 from utils import setup_gpu, generate_z, generate_zeros1, generate_zeros2
-from utils import save_train_data, save_models, weights_init
-from visualizers import plot_losses, view_samples, plot_accuracy, plot_together, view_dataset
+from utils import save_train_data, save_models, load_models, weights_init
+from visualizers import plot_losses, plot_accuracy, plot_together
+from visualizers import view_samples, view_dataset, view_generated_samples
 from logs import print_message, log_pytorch_stats, log_message, log_time, newfile, log
 from load_data import load_data
 
@@ -30,11 +31,12 @@ data_path = 'dogs-vs-cats'
 
 
 # Get correct directory
+cwd = ''
 if remote: 
-    cur_dir = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
-    working_dir = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator')
-    data_path = os.path.join(working_dir, data_path)
-    config_path = os.path.join(working_dir, config_path) 
+    cwd = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
+    cwd = os.path.join(cwd, 'course', 'cs1430', 'theRealPetGenerator')
+    data_path = os.path.join(cwd, data_path)
+    config_path = os.path.join(cwd, config_path) 
 
 
 # Load config file
@@ -64,15 +66,21 @@ def main():
 
     # Visualize results
     if config.eval_mode:
-        plot_together(config)
-        # view_samples(config)
-        # view_dataset(config, data_path)
+        # plot_together(config) # plot losses, acc, av_av
+        # view_samples(config) # view samples through epochs
+        view_generated_samples(config) # view samples generated in generate mode
+        # view_dataset(config, data_path) # view train data
 
 
     # Generate images
     if config.generate_mode:
+        log(config, config)
+        device, world_size = setup_gpu(config)
+        log_pytorch_stats(config)
+
         if config.multiple_gpus:          
             log(config, f'Spawning generate_images() on {world_size} GPUs!')
+            newfile(config)
             mp.spawn(generate_images, args=(config, world_size), nprocs=world_size) 
 
         else:
@@ -85,7 +93,7 @@ def main():
 def train(rank, config, world_size):
     # Load data, models
     data_loader = load_data(config, data_path, world_size, rank)
-    G, D = load_models(config, rank, world_size)
+    G, D = make_models(config, rank, world_size)
 
     # Randomly initialize weights to N(0, 0.02)
     G.apply(weights_init)
@@ -207,17 +215,18 @@ def train(rank, config, world_size):
         else: log(config, f'Train time for epoch {epoch}:', datetime.datetime.now()-start_time)
 
     # DONE-ZO
+    save_train_data(config, cwd, losses, samples, accuracies, av_preds)
+    save_models(config, G, D, cwd)
     log(config, 'Finished train')
-    save_train_data(config, cur_dir, losses, samples, accuracies, av_preds)
-    save_models(G, D, config)
 
 
 
-# Generate images
+# Generate images to eval model
 def generate_images(rank, config, world_size):
 
     # Load models
-    G, _ = load_models(config, rank, world_size)
+    G, D = make_models(config, rank, world_size)
+    G, _ = load_models(config, G, D, cwd)
 
     # Generate noise for generator input
     z = generate_z(config, config.num_generate, rank)
@@ -229,27 +238,27 @@ def generate_images(rank, config, world_size):
         generated_images = generated_images.detach().cpu().numpy()
 
     # Save images
-    generated_fname = os.path.join(cur_dir, 'course', 'cs1430', 'theRealPetGenerator', config.generated_fname)
+    generated_fname = os.path.join(cwd, config.generated_fname)
     np.save(generated_fname, generated_images)
-    log(config, 'Saved generated images to:', generated_fname)
+    log(config, f'Saved {config.num_generate} generated images to: {generated_fname}')
 
 
 
 # Load Generator, Discriminator
-def load_models(config, rank, world_size):
+def make_models(config, rank, world_size):
     # Load models
     if config.multiple_gpus:
-        log(config, f'Starting train! Rank {rank}')
         dist.init_process_group('nccl', rank=rank, world_size=world_size)
         G = Generator(config, rank).to(rank)
         D = Discriminator(config, rank).to(rank)
         G.model = DDP(G.model, device_ids=[rank], broadcast_buffers=False)
         D.model = DDP(D.model, device_ids=[rank], broadcast_buffers=False)  
+        log(config, f'Loaded models! Rank {rank}')
 
     else:
-        log(config, 'Starting train!')
         G = Generator(config, rank).to(rank)
         D = Discriminator(config, rank).to(rank)
+        log(config, 'Loaded models!')
 
     return G, D
 
@@ -263,4 +272,4 @@ if __name__ == '__main__':
     end_time = datetime.datetime.now()
     elapsed_time = end_time - start_time
 
-    log(config, "Total time:", elapsed_time, f' at {end_time}')
+    log(config, f'Total time: {elapsed_time} @ {end_time}')

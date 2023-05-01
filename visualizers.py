@@ -3,28 +3,6 @@ import numpy as np
 from load_data import load_data
 
 
-# Plot Gen/Disc losses through epochs
-# Input is 2D numpy array where col0 is Gen and col1 is Disc
-def plot_losses(config):
-    losses_fname = config.losses_fname
-    print(f'Plotting losses from: {losses_fname}')
-    losses = np.load(losses_fname)
-
-    num_epochs = losses.shape[0]
-    x = np.arange(num_epochs)
-    gen = losses[:, 0]
-    disc = losses[:, 1]
-
-    plt.figure()
-    plt.plot(x, gen, '.-', label='Generator Loss')
-    plt.plot(x, disc, '.-', label='Discriminator Loss')
-    plt.title('Model Losses vs. Epoch')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss (Binary Cross Entropy)')
-    plt.legend()
-    plt.show()
-
-
 # View generator results though epochs
 def view_samples(config):
     samples_fname = config.samples_fname
@@ -33,7 +11,7 @@ def view_samples(config):
     samples = np.load(samples_fname)
 
     # Use this for epochs = 100
-    every_n_epochs = 40
+    every_n_epochs = 1
     cols = 8
     rows = int(len(samples)/every_n_epochs)
     print(len(samples), ' epochs in saved samples')
@@ -49,7 +27,7 @@ def view_samples(config):
                 ax.imshow(img, cmap='gray')
 
             else: 
-                # Change (3, H, W) to (H, W, 3)
+                # Change (3, H, W) to (H,   W, 3)
                 img = np.transpose(img, (1, 2, 0))
                 ax.imshow(img)
 
@@ -72,6 +50,28 @@ def view_samples(config):
     plt.show()
 
 
+# View samples generated in generate mode
+def view_generated_samples(config):
+    generated_fname = config.generated_fname
+    print(f'Viewing generated samples from: {generated_fname}')
+
+    images = np.load(generated_fname)
+    num_generated = config.num_generate
+    rows = 5
+    cols = num_generated//rows
+    _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols)
+    for ax, img in zip(axes.flat, images):
+
+        if config.nchannels == 1: ax.imshow(img[0], cmap='gray')
+        elif config.nchannels == 3: 
+            img = np.transpose(img, (1, 2, 0))
+            ax.imshow(img)
+        ax.axis('off')
+
+    plt.show()
+
+
+
 # View samples from dataset
 def view_dataset(config, data_path):
     print('Viewing samples from dataset')
@@ -80,7 +80,7 @@ def view_dataset(config, data_path):
 
     rows = 4
     cols = 4
-    _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols, sharex=True, sharey=True)
+    _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols)
     count = 0
     for axes_row in axes:
         for ax in axes_row:
@@ -98,27 +98,6 @@ def view_dataset(config, data_path):
             count += 1
     plt.show()
 
-# Plot Discriminator accuracy
-def plot_accuracy(config):
-    acc_fname = config.acc_fname
-    print(f'Plotting accuracies from: {acc_fname}')
-    accuracies = np.load(acc_fname)
-
-    real_acc = accuracies[:, 0]
-    fake_acc = accuracies[:, 1]
-    av_acc = np.mean(accuracies, axis=1)
-    num_epochs = accuracies.shape[0]
-    epochs = np.arange(num_epochs)
-
-    plt.figure()
-    plt.plot(epochs, real_acc, '.-', label='Acc. on Real')
-    plt.plot(epochs, fake_acc, '.-', label='Acc. on Fake')
-    plt.plot(epochs, av_acc, '.-', label='Average')
-    plt.legend()
-    ymax = max(1, np.max(accuracies)) + 0.05
-    plt.ylim(-0.05, ymax)
-    plt.title('Discriminator Accuracy')
-    plt.show()
 
 
 # Plot losses and accuracy together
@@ -173,4 +152,51 @@ def plot_together(config):
     ax3.set_ylabel('Prediciton')
     ax3.grid(True)
 
+    plt.show()
+
+
+
+# Plot Gen/Disc losses through epochs
+# Input is 2D numpy array where col0 is Gen and col1 is Disc
+def plot_losses(config):
+    losses_fname = config.losses_fname
+    print(f'Plotting losses from: {losses_fname}')
+    losses = np.load(losses_fname)
+
+    num_epochs = losses.shape[0]
+    x = np.arange(num_epochs)
+    gen = losses[:, 0]
+    disc = losses[:, 1]
+
+    plt.figure()
+    plt.plot(x, gen, '.-', label='Generator Loss')
+    plt.plot(x, disc, '.-', label='Discriminator Loss')
+    plt.title('Model Losses vs. Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss (Binary Cross Entropy)')
+    plt.legend()
+    plt.show()
+
+
+
+# Plot Discriminator accuracy
+def plot_accuracy(config):
+    acc_fname = config.acc_fname
+    print(f'Plotting accuracies from: {acc_fname}')
+    accuracies = np.load(acc_fname)
+
+    real_acc = accuracies[:, 0]
+    fake_acc = accuracies[:, 1]
+    av_acc = np.mean(accuracies, axis=1)
+    num_epochs = accuracies.shape[0]
+    epochs = np.arange(num_epochs)
+
+    plt.figure()
+    plt.plot(epochs, real_acc, '.-', label='Acc. on Real')
+    plt.plot(epochs, fake_acc, '.-', label='Acc. on Fake')
+    plt.plot(epochs, av_acc, '.-', label='Average')
+    plt.legend()
+    ymax = max(1, np.max(accuracies)) + 0.05
+    plt.ylim(-0.05, ymax)
+    plt.title('Discriminator Accuracy')
     plt.show()

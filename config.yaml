@@ -10,7 +10,7 @@ latent_size: 100
 
 # Train specs
 batch_size: 16 # True batch size is batch_size * n_GPU
-num_epochs: 200
+num_epochs: 5
 update_every: 1 # Update discriminator every __ batches
 print_every: 20 # Print stats every __ batches
 
@@ -31,13 +31,19 @@ num_constant: 10 # Number of samples to save per epoch
 num_generate: 20 # Number of samples to generate in generate_mode
 
 # Filenames for saved stuff
+
+# Save models
+d_fname: 'd_model.pth' # Save D model here
+g_fname: 'g_model.pth' # Save G model here
+
+# Saved samples
 generated_fname: 'generated_fname.npy' # Numpy array (num_generate, nchannels, img_size, img_size) to save final model generations
 samples_fname: 'train_samples.npy' # Numpy array (epoch, num_constant, nchannels, img_size, img_size) to save samples epoch by epoch
-losses_fname: 'train_losses_200.npy' # Numpy array (epoch, 2) - gen, disc
-acc_fname: 'train_accuracies_200.npy' # Numpy array (epoch, 2) - real, fake
-av_preds_fname: 'train_av_preds_200.npy' # Numpy array (epoch, 2) - real, fake
+
+# For plotting
+losses_fname: 'train_losses.npy' # Numpy array (epoch, 2) - gen, disc
+acc_fname: 'train_accuracies.npy' # Numpy array (epoch, 2) - real, fake
+av_preds_fname: 'train_av_preds.npy' # Numpy array (epoch, 2) - real, fake
  
 # Filenames for logging
 log_fname: 'train_log' # Instead of print statement
-d_fname: 'd_model.pth' # Save D model here
-g_fname: 'g_model.pth' # Save G model here

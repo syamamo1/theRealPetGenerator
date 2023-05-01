@@ -8,9 +8,9 @@ import numpy as np
 
 # Write message to file
 def log(config, message1, message2='', message3=''):
-    message = f'{message1} {message2} {message3} \n'
+    message = f'{message1} {message2} {message3}'
     with open(config.log_fname, 'a') as f:
-        f.write(message)
+        f.write(message+'\n')
     print(message)
 
 
@@ -60,6 +60,7 @@ def log_time(config, epoch, start_time):
 def newfile(config):
     with open(config.log_fname, 'w') as _:
         pass
+    log(config, f'Cleared file: {config.log_fname}')
 
 
 
