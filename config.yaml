@@ -1,7 +1,7 @@
 # Train or analyze performance
-train_mode: 0
-eval_mode: 1
-generate_mode: 0
+train_mode: 0 # remote
+eval_mode: 1 # non-remote
+generate_mode: 0 # remote
 
 # Dataset specs
 nchannels: 3 # 1 or 3
