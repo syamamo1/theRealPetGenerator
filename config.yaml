@@ -9,10 +9,10 @@ img_size: 64 # = height = width
 latent_size: 100
 
 # Train specs
-batch_size: 16 # True batch size is batch_size * n_GPU
-num_epochs: 5
-update_every: 1 # Update discriminator every __ batches
-print_every: 20 # Print stats every __ batches
+batch_size: 4 # True batch size is batch_size * n_GPU
+num_epochs: 2400
+update_every: 2 # Update discriminator every __ batches
+print_every: 100 # Print stats every __ batches
 
 # Data labels
 real_labels: 1 # Can smooth here
@@ -28,13 +28,14 @@ multiple_gpus: True
 
 # Num samples to make
 num_constant: 10 # Number of samples to save per epoch
-num_generate: 20 # Number of samples to generate in generate_mode
+num_generate: 40 # Number of samples to generate in generate_mode
 
 # Filenames for saved stuff
 
-# Save models
+# Save finished models
 d_fname: 'd_model.pth' # Save D model here
 g_fname: 'g_model.pth' # Save G model here
+
 
 # Saved samples
 generated_fname: 'generated_fname.npy' # Numpy array (num_generate, nchannels, img_size, img_size) to save final model generations

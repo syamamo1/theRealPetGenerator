@@ -20,9 +20,11 @@ def load_data(config, data_path, world_size, rank):
     data_loader: iterable object containing pytorch tensors of batches of real images and their labels 
     '''
     if config.nchannels == 3:
-        transform = transforms.Compose([transforms.Resize(config.img_size),
-                                    transforms.CenterCrop(config.img_size),
-                                    transforms.ToTensor()])
+        transform = transforms.Compose([transforms.Resize(config.img_size+16),
+                                    transforms.RandomCrop(config.img_size), 
+                                    transforms.RandomHorizontalFlip(p=0.5),
+                                    transforms.ToTensor(),
+                                    ])
     elif config.nchannels == 1:
         transform = transforms.Compose([transforms.Resize(config.img_size),
                                     transforms.Grayscale(num_output_channels=1),

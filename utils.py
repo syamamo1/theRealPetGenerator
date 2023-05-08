@@ -92,6 +92,7 @@ def save_train_data(config, cwd, losses, samples, accuracies, av_preds):
 
 # Save model for loading in future
 def save_models(config, G, D, cwd):
+    
     g_path = os.path.join(cwd, config.g_fname)
     d_path = os.path.join(cwd, config.d_fname)
     
