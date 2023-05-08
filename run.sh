@@ -6,7 +6,7 @@
 
 
 export PYTHON=/bin/python3
-export TRAIN=/home/syamamo1/course/cs1430/theRealPetGenerator/main.py
+export TRAIN=/home/jvietori/course/cs1430/theRealPetGenerator/main.py
 
 
 $PYTHON $TRAIN

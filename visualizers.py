@@ -9,9 +9,8 @@ def view_samples(config):
     print(f'Viewing samples from: {samples_fname}')
 
     samples = np.load(samples_fname)
-
-    # Use this for epochs = 100
-    every_n_epochs = 1
+    
+    every_n_epochs = 200
     cols = 8
     rows = int(len(samples)/every_n_epochs)
     print(len(samples), ' epochs in saved samples')
@@ -57,7 +56,7 @@ def view_generated_samples(config):
 
     images = np.load(generated_fname)
     num_generated = config.num_generate
-    rows = 5
+    rows = 3
     cols = num_generated//rows
     _, axes = plt.subplots(figsize=(2*cols,2*rows), nrows=rows, ncols=cols)
     for ax, img in zip(axes.flat, images):
@@ -105,7 +104,7 @@ def plot_together(config):
     losses_fname = config.losses_fname
     acc_fname = config.acc_fname
     av_preds_fname = config.av_preds_fname
-    _, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(8, 8))
+    _, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, figsize=(5, 10))
     
     print(f'Plotting losses from: {losses_fname}')
     losses = np.load(losses_fname)
@@ -114,8 +113,8 @@ def plot_together(config):
     gen = losses[:, 0]
     disc = losses[:, 1]
 
-    ax1.plot(x, gen, '.-', label='Generator Loss')
-    ax1.plot(x, disc, '.-', label='Discriminator Loss')
+    ax1.plot(x, gen, '.-', label='Generator Loss', linewidth=0.75)
+    ax1.plot(x, disc, '.-', label='Discriminator Loss', linewidth=0.75)
     ax1.set_title('Losses')
     ax1.legend()
     ax1.set_ylabel('BCE Loss')
@@ -127,9 +126,9 @@ def plot_together(config):
     fake_acc = accuracies[:, 1]
     av_acc = np.mean(accuracies, axis=1)
 
-    ax2.plot(x, real_acc, '.-', label='Acc. on Real')
-    ax2.plot(x, fake_acc, '.-', label='Acc. on Fake')
-    ax2.plot(x, av_acc, '.-', label='Average')
+    ax2.plot(x, real_acc, '.-', label='Acc. on Real', linewidth=0.75)
+    ax2.plot(x, fake_acc, '.-', label='Acc. on Fake', linewidth=0.75)
+    ax2.plot(x, av_acc, '.-', label='Average', linewidth=0.75)
     ax2.legend()
     ymax = max(1, np.max(accuracies)) + 0.05
     ax2.set_ylim(-0.05, ymax)
@@ -142,8 +141,8 @@ def plot_together(config):
     av_pred_real = av_preds[:, 0]
     av_pred_fake = av_preds[:, 1]
 
-    ax3.plot(x, av_pred_real, '.-', label='Av. Pred on Real')
-    ax3.plot(x, av_pred_fake, '.-', label='Av. Pred on Fake')
+    ax3.plot(x, av_pred_real, '.-', label='Av. Pred on Real', linewidth=0.5)
+    ax3.plot(x, av_pred_fake, '.-', label='Av. Pred on Fake', linewidth=0.5)
     ax3.legend()
     ymax = max(1, np.max(accuracies)) + 0.05
     ax3.set_ylim(-0.05, ymax)

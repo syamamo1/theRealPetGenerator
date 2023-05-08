@@ -21,24 +21,25 @@ class Generator(nn.Module):
 
         # Outputs size (nsamples, nchannels, 64, 64)
         self.model = nn.Sequential(
+            
             nn.ConvTranspose2d(config.latent_size, 512, kernel_size=4, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(512),
-            nn.LeakyReLU(),
+            nn.ReLU(),
 
             nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=False),
             nn.BatchNorm2d(256),
-            nn.LeakyReLU(),
+            nn.ReLU(),
 
             nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=False),
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
+            nn.ReLU(),
 
             nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=False),
             nn.BatchNorm2d(64),
-            nn.LeakyReLU(),
+            nn.ReLU(),
 
             nn.ConvTranspose2d(64, config.nchannels, 4, 2, 1, bias=False),
-            nn.Sigmoid()
+            nn.Tanh()
         )
 
 

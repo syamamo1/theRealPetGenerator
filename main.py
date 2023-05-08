@@ -33,7 +33,7 @@ data_path = 'dogs-vs-cats'
 # Get correct directory
 cwd = ''
 if remote: 
-    cwd = os.getcwd() #  '/ifs/CS/replicated/home/syamamo1/'
+    cwd = os.getcwd() 
     cwd = os.path.join(cwd, 'course', 'cs1430', 'theRealPetGenerator')
     data_path = os.path.join(cwd, data_path)
     config_path = os.path.join(cwd, config_path) 
@@ -68,9 +68,8 @@ def main():
     if config.eval_mode:
         # plot_together(config) # plot losses, acc, av_av
         # view_samples(config) # view samples through epochs
-        view_generated_samples(config) # view samples generated in generate mode
-        # view_dataset(config, data_path) # view train data
-
+        # view_generated_samples(config) # view samples generated in generate mode
+        view_dataset(config, data_path) # view train data
 
     # Generate images
     if config.generate_mode:
@@ -93,12 +92,13 @@ def main():
 def train(rank, config, world_size):
     # Load data, models
     data_loader = load_data(config, data_path, world_size, rank)
+    
     G, D = make_models(config, rank, world_size)
-
     # Randomly initialize weights to N(0, 0.02)
     G.apply(weights_init)
     D.apply(weights_init)
-        
+
+   
     # Load optimizers
     d_optimizer = optim.Adam(D.parameters(), lr=config.lr, betas=(config.beta1, 0.999))
     g_optimizer = optim.Adam(G.parameters(), lr=config.lr, betas=(config.beta1, 0.999))
@@ -213,6 +213,7 @@ def train(rank, config, world_size):
         # print(torch.cuda.memory_summary())
         if config.multiple_gpus: log_time(config, epoch, start_time)
         else: log(config, f'Train time for epoch {epoch}:', datetime.datetime.now()-start_time)
+
 
     # DONE-ZO
     save_train_data(config, cwd, losses, samples, accuracies, av_preds)
